@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+BUILD_DIR="$ROOT_DIR/.build/release"
+DIST_DIR="$ROOT_DIR/dist"
+APP_DIR="$DIST_DIR/MyArchive.app"
+EXECUTABLE_NAME="MyArchiveGUI"
+EXECUTABLE_PATH="$BUILD_DIR/$EXECUTABLE_NAME"
+
+if [[ "$(uname)" != "Darwin" ]]; then
+  echo "This script must be run on macOS."
+  exit 1
+fi
+
+mkdir -p "$DIST_DIR"
+
+if ! command -v swift >/dev/null 2>&1; then
+  echo "Swift toolchain not found. Install Xcode or Xcode Command Line Tools."
+  exit 1
+fi
+
+# If OpenSSL is installed by Homebrew, surface its pkg-config metadata for swift build.
+if command -v brew >/dev/null 2>&1 && brew --prefix openssl@3 >/dev/null 2>&1; then
+  OPENSSL_PREFIX="$(brew --prefix openssl@3)"
+  export PKG_CONFIG_PATH="$OPENSSL_PREFIX/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+  export CPPFLAGS="-I$OPENSSL_PREFIX/include ${CPPFLAGS:-}"
+  export LDFLAGS="-L$OPENSSL_PREFIX/lib ${LDFLAGS:-}"
+fi
+
+swift build -c release --product "$EXECUTABLE_NAME"
+
+rm -rf "$APP_DIR"
+mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources" "$APP_DIR/Contents/Frameworks"
+cp "$EXECUTABLE_PATH" "$APP_DIR/Contents/MacOS/$EXECUTABLE_NAME"
+chmod +x "$APP_DIR/Contents/MacOS/$EXECUTABLE_NAME"
+
+cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>en</string>
+  <key>CFBundleExecutable</key>
+  <string>MyArchiveGUI</string>
+  <key>CFBundleIdentifier</key>
+  <string>com.example.myarchive</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>5.0</string>
+  <key>CFBundleName</key>
+  <string>MyArchive</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>0.1.0</string>
+  <key>CFBundleVersion</key>
+  <string>1</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>13.0</string>
+  <key>NSHighResolutionCapable</key>
+  <true/>
+</dict>
+</plist>
+PLIST
+
+# Bundle Swift runtime libraries.
+if command -v xcrun >/dev/null 2>&1; then
+  xcrun swift-stdlib-tool \
+    --copy \
+    --platform macosx \
+    --scan-executable "$APP_DIR/Contents/MacOS/$EXECUTABLE_NAME" \
+    --destination "$APP_DIR/Contents/Frameworks"
+fi
+
+# Bundle libcrypto if linked from Homebrew OpenSSL.
+if command -v otool >/dev/null 2>&1; then
+  LINKED_CRYPTO="$(otool -L "$APP_DIR/Contents/MacOS/$EXECUTABLE_NAME" | awk '/libcrypto/ {print $1; exit}')"
+  if [[ -n "$LINKED_CRYPTO" && -f "$LINKED_CRYPTO" ]]; then
+    cp "$LINKED_CRYPTO" "$APP_DIR/Contents/Frameworks/"
+    CRYPTO_BASENAME="$(basename "$LINKED_CRYPTO")"
+    install_name_tool -id "@executable_path/../Frameworks/$CRYPTO_BASENAME" "$APP_DIR/Contents/Frameworks/$CRYPTO_BASENAME"
+    install_name_tool -change "$LINKED_CRYPTO" "@executable_path/../Frameworks/$CRYPTO_BASENAME" "$APP_DIR/Contents/MacOS/$EXECUTABLE_NAME"
+  fi
+fi
+
+# Ad-hoc sign so Gatekeeper at least sees a valid code signature.
+if command -v codesign >/dev/null 2>&1; then
+  codesign --force --deep --sign - "$APP_DIR"
+fi
+
+echo "Created $APP_DIR"
