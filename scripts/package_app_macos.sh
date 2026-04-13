@@ -20,6 +20,23 @@ if ! command -v swift >/dev/null 2>&1; then
   exit 1
 fi
 
+if ! command -v xcrun >/dev/null 2>&1; then
+  echo "xcrun not found. Install Xcode or Xcode Command Line Tools."
+  exit 1
+fi
+
+if ! xcrun --sdk macosx --show-sdk-path >/dev/null 2>&1; then
+  cat <<'EOF'
+Unable to locate a valid macOS SDK via xcrun.
+Fix your developer tools setup, then retry:
+  sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
+  xcodebuild -runFirstLaunch
+Or reinstall Command Line Tools:
+  xcode-select --install
+EOF
+  exit 1
+fi
+
 # If OpenSSL is installed by Homebrew, surface its pkg-config metadata for swift build.
 if command -v brew >/dev/null 2>&1 && brew --prefix openssl@3 >/dev/null 2>&1; then
   OPENSSL_PREFIX="$(brew --prefix openssl@3)"
