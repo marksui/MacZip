@@ -67,7 +67,8 @@ products.append(.executable(name: "MyArchiveGUI", targets: ["MyArchiveGUI"]))
 targets.append(
     .executableTarget(
         name: "MyArchiveGUI",
-        dependencies: [],
+
+
         path: "Sources/MyArchiveGUI",
         linkerSettings: [
             .linkedFramework("AppKit"),
