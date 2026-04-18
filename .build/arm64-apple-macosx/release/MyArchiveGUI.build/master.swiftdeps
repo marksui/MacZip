@@ -1,0 +1,7 @@
+version: "Apple Swift version 5.10 (swiftlang-5.10.0.13 clang-1500.3.9.4)"
+options: "868e07a64894d70b94179926eb40fbd6"
+build_time: [1776490751, 894467000]
+inputs:
+  "/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/AppEntry.swift": [9223372036, 854775807]
+  "/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/ContentView.swift": [9223372036, 854775807]
+  "/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/ZipExtractor.swift": [9223372036, 854775807]

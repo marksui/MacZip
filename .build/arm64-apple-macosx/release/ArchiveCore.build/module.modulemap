@@ -1,0 +1,4 @@
+module ArchiveCore {
+    umbrella "/Users/mark/Documents/GitHub/MacZip/Sources/ArchiveCore/include"
+    export *
+}

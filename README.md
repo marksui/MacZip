@@ -1,92 +1,92 @@
-# EasyArchive
+# MacZip (MyArchive)
 
-EasyArchive is a small native macOS utility for people who just want to zip or unzip files without learning technical tools.
+MacZip is a macOS-first archive tool with:
+- a C++ core library (`ArchiveCore`) for packing and unpacking
+- a CLI (`myarchive-cli`)
+- a SwiftUI GUI target (`MyArchiveGUI`) built via Swift Package Manager
 
-It is:
-- macOS only
-- offline only
-- local-only with no network, login, analytics, or cloud features
-- built with SwiftUI and standard macOS system tools
+## Requirements
 
-## Project structure
+- macOS 12 or newer (from `Package.swift`)
+- Xcode 15+ or recent Swift 5.10 toolchain
+- OpenSSL and zlib development libraries
 
-The main app lives in the `EasyArchive/` folder:
+Homebrew setup:
 
-- `EasyArchiveApp.swift`
-- `ContentView.swift`
-- `ArchiveService.swift`
-- `FilePicker.swift`
-- `Models.swift`
-- `HistoryStore.swift`
+```bash
+brew install openssl@3 zlib
+```
 
-The Xcode project is:
+## Project Layout
 
-- `EasyArchive.xcodeproj`
+- `Package.swift`: SwiftPM manifest and targets
+- `Sources/ArchiveCore`: C++ archive implementation
+- `Sources/ArchiveBridge`: C bridge for archive core
+- `Sources/MyArchiveCLI`: command-line app
+- `Sources/MyArchiveGUI`: SwiftUI GUI app entry and views
+- `MarkMacZip/`: alternate SwiftUI app source set (not wired as a SwiftPM target)
+- `scripts/smoke_test_cli.sh`: end-to-end CLI smoke test
+- `scripts/package_app_macos.sh`: packages `MyArchiveGUI` as `.app`
 
-## How to open in Xcode
+## Build
 
-1. Open `EasyArchive.xcodeproj` in Xcode on macOS.
-2. Select the `EasyArchive` scheme.
-3. Choose a macOS run destination such as `My Mac`.
-4. Press `Run`.
+From repo root:
 
-## How to run
+```bash
+cd MacZip
+swift build
+```
 
-1. Launch the app from Xcode.
-2. Drag files or folders into the large center drop area, or click `Select File`.
-3. Click `Choose Output Folder`.
-4. Click `Extract` for `.zip` files or `Compress` for files and folders.
-5. Read the status message at the bottom for success or error details.
+Build specific products:
 
-## Current supported formats
+```bash
+swift build -c release --product myarchive-cli
+swift build -c release --product MyArchiveGUI
+```
 
-- Extract: `.zip`
-- Compress: `.zip`
+## Run
 
-## MVP behavior
+CLI help:
 
-- Drag and drop files or folders into the main window
-- Choose files and folders from Finder
-- Extract `.zip` archives into a new output folder
-- Compress selected files or folders into a `.zip` archive
-- Prevent accidental overwrite by appending `copy`, `copy 2`, and so on
-- Show status text and friendly success or error messages
-- Keep a simple recent activity list in app state for the current app session
+```bash
+.build/debug/myarchive-cli --help
+```
 
-## Sample user flow
+Release binary:
 
-Example 1: Unzip photos from a school email
+```bash
+.build/release/myarchive-cli --help
+```
 
-1. Open EasyArchive.
-2. Drag `photos.zip` into the window.
-3. Click `Choose Output Folder` and pick `Desktop`.
-4. Click `Extract`.
-5. EasyArchive creates a new folder like `photos` or `photos copy` on the Desktop.
+Run GUI executable directly after building:
 
-Example 2: Create one zip file from a folder
+```bash
+.build/release/MyArchiveGUI
+```
 
-1. Open EasyArchive.
-2. Drag a folder such as `Tax Documents`.
-3. Choose an output folder.
-4. Click `Compress`.
-5. EasyArchive creates `Tax Documents.zip` or a safe copied name if that file already exists.
+## Package macOS App Bundle
 
-## Localization note
+Create `dist/MyArchive.app`:
 
-The UI strings are centralized in code so they are easier to move into localization files later, including Chinese text support.
+```bash
+chmod +x scripts/package_app_macos.sh
+./scripts/package_app_macos.sh
+```
 
-## Future improvement ideas
+Output:
+- `dist/MyArchive.app`
 
-- Batch extract multiple zip files with per-item progress
-- Quick action to extract into the same folder as the archive
-- Quick action to compress directly to the Desktop
-- Preview archive contents before extraction
-- Keyboard shortcuts and menu commands
-- Persistent history between launches
-- Better progress reporting for long operations
-- Expanded format support beyond ZIP
+## CLI Smoke Test
+
+```bash
+chmod +x scripts/smoke_test_cli.sh
+./scripts/smoke_test_cli.sh
+```
+
+This verifies pack/unpack behavior by creating test input, archiving it, extracting it, and diffing results.
 
 ## Notes
 
-- The app uses native macOS panels plus `Process` to call standard system archive tools in a controlled way.
-- This repo may also contain older packaging or archive experiments, but `EasyArchive.xcodeproj` is the project to open for this MVP.
+- The packaging script bundles Swift runtime libraries and attempts ad-hoc signing.
+- If OpenSSL is installed via Homebrew, packaging/build scripts automatically export `PKG_CONFIG_PATH`, `CPPFLAGS`, and `LDFLAGS`.
+- `MarkMacZip/` files are present in the repo but are currently separate from the active SwiftPM GUI target in `Sources/MyArchiveGUI`.

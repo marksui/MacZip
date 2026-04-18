@@ -1,0 +1,266 @@
+{
+  "builtTestProducts" : [
+
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.MyArchiveGUI-release.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/sources",
+      "importPath" : "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/AppEntry.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/ContentView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/ZipExtractor.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "MyArchiveGUI",
+      "moduleOutputPath" : "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.swiftmodule",
+      "objects" : [
+        "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/AppEntry.swift.o",
+        "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/ContentView.swift.o",
+        "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/ZipExtractor.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx12.0",
+        "-swift-version",
+        "5",
+        "-O",
+        "-j8",
+        "-DSWIFT_PACKAGE",
+        "-module-cache-path",
+        "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "MyArchiveGUI_main",
+        "-color-diagnostics",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "maczip"
+      ],
+      "outputFileMapPath" : "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/AppEntry.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/ContentView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/ZipExtractor.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.swiftmodule"
+        }
+      ],
+      "sources" : [
+        "/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/AppEntry.swift",
+        "/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/ContentView.swift",
+        "/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/ZipExtractor.swift"
+      ],
+      "tempsPath" : "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build",
+      "wholeModuleOptimization" : true
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "MyArchiveGUI" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "MyArchiveGUI",
+      "-package-name",
+      "maczip",
+      "-whole-module-optimization",
+      "-num-threads",
+      "8",
+      "-c",
+      "/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/AppEntry.swift",
+      "/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/ContentView.swift",
+      "/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/ZipExtractor.swift",
+      "-I",
+      "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release",
+      "-target",
+      "arm64-apple-macosx12.0",
+      "-swift-version",
+      "5",
+      "-O",
+      "-j8",
+      "-DSWIFT_PACKAGE",
+      "-module-cache-path",
+      "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "MyArchiveGUI_main",
+      "-color-diagnostics",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "maczip",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "ArchiveBridge" : [
+      "ArchiveCore",
+      "CZlib",
+      "COpenSSL"
+    ],
+    "ArchiveCore" : [
+      "CZlib",
+      "COpenSSL"
+    ],
+    "MyArchiveCLI" : [
+      "ArchiveCore",
+      "CZlib",
+      "COpenSSL"
+    ],
+    "MyArchiveGUI" : [
+
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+
+  },
+  "writeCommands" : {
+    "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/AppEntry.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/ContentView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/ZipExtractor.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/sources"
+    },
+    "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/AppEntry.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/ContentView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/ZipExtractor.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.product/Objects.LinkFileList"
+    },
+    "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/myarchive-cli.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/ArchiveCore.build/archive_core.cpp.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveCLI.build/main.cpp.o"
+        }
+      ],
+      "outputFilePath" : "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/myarchive-cli.product/Objects.LinkFileList"
+    },
+    "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/swift-version--1AB21518FC5DEDBE.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/swift-version--1AB21518FC5DEDBE.txt"
+    }
+  }
+}

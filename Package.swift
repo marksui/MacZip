@@ -81,6 +81,9 @@ targets.append(
 
 let package = Package(
     name: "MyArchive",
+    platforms: [
+        .macOS(.v12),
+    ],
     products: products,
     targets: targets,
     cxxLanguageStandard: .cxx17

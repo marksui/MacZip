@@ -1,0 +1,142 @@
+client:
+  name: basic
+  file-system: device-agnostic
+tools: {}
+targets:
+  "ArchiveBridge-release.module": ["<ArchiveBridge-release.module>"]
+  "ArchiveCore-release.module": ["<ArchiveCore-release.module>"]
+  "MyArchiveCLI-release.module": ["<MyArchiveCLI-release.module>"]
+  "MyArchiveGUI-release.exe": ["<MyArchiveGUI-release.exe>"]
+  "MyArchiveGUI-release.module": ["<MyArchiveGUI-release.module>"]
+  "PackageStructure": ["<PackageStructure>"]
+  "main": ["<ArchiveBridge-release.module>","<ArchiveCore-release.module>","<MyArchiveCLI-release.module>","<MyArchiveGUI-release.exe>","<MyArchiveGUI-release.module>","<myarchive-cli-release.exe>"]
+  "myarchive-cli-release.exe": ["<myarchive-cli-release.exe>"]
+  "test": ["<ArchiveBridge-release.module>","<ArchiveCore-release.module>","<MyArchiveCLI-release.module>","<MyArchiveGUI-release.exe>","<MyArchiveGUI-release.module>","<myarchive-cli-release.exe>"]
+default: "main"
+nodes:
+  "/Users/mark/Documents/GitHub/MacZip/Sources/ArchiveBridge/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/mark/Documents/GitHub/MacZip/Sources/ArchiveCore/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/mark/Documents/GitHub/MacZip/Sources/COpenSSL/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/mark/Documents/GitHub/MacZip/Sources/CZlib/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveCLI/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+commands:
+  "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/ArchiveBridge.build/archive_bridge.cpp.o":
+    tool: clang
+    inputs: ["/Users/mark/Documents/GitHub/MacZip/Sources/ArchiveBridge/archive_bridge.cpp"]
+    outputs: ["/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/ArchiveBridge.build/archive_bridge.cpp.o"]
+    description: "Compiling ArchiveBridge archive_bridge.cpp"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/clang","-fobjc-arc","-target","arm64-apple-macosx12.0","-O2","-DSWIFT_PACKAGE=1","-fblocks","-I","/Users/mark/Documents/GitHub/MacZip/Sources/ArchiveBridge/include","-I","/Users/mark/Documents/GitHub/MacZip/Sources/ArchiveCore/include","-fmodule-map-file=/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/ArchiveCore.build/module.modulemap","-fmodule-map-file=/Users/mark/Documents/GitHub/MacZip/Sources/CZlib/module.modulemap","-fmodule-map-file=/Users/mark/Documents/GitHub/MacZip/Sources/COpenSSL/module.modulemap","-I/opt/homebrew/Cellar/openssl@3/3.6.1/include","-std=c++17","-isysroot","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-fPIC","-g","-g","-MD","-MT","dependencies","-MF","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/ArchiveBridge.build/archive_bridge.cpp.d","-std=c++17","-c","/Users/mark/Documents/GitHub/MacZip/Sources/ArchiveBridge/archive_bridge.cpp","-o","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/ArchiveBridge.build/archive_bridge.cpp.o"]
+    deps: "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/ArchiveBridge.build/archive_bridge.cpp.d"
+
+  "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/ArchiveCore.build/archive_core.cpp.o":
+    tool: clang
+    inputs: ["/Users/mark/Documents/GitHub/MacZip/Sources/ArchiveCore/archive_core.cpp"]
+    outputs: ["/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/ArchiveCore.build/archive_core.cpp.o"]
+    description: "Compiling ArchiveCore archive_core.cpp"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/clang","-fobjc-arc","-target","arm64-apple-macosx12.0","-O2","-DSWIFT_PACKAGE=1","-fblocks","-I","/Users/mark/Documents/GitHub/MacZip/Sources/ArchiveCore/include","-fmodule-map-file=/Users/mark/Documents/GitHub/MacZip/Sources/CZlib/module.modulemap","-fmodule-map-file=/Users/mark/Documents/GitHub/MacZip/Sources/COpenSSL/module.modulemap","-I/opt/homebrew/Cellar/openssl@3/3.6.1/include","-std=c++17","-isysroot","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-fPIC","-g","-g","-MD","-MT","dependencies","-MF","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/ArchiveCore.build/archive_core.cpp.d","-std=c++17","-c","/Users/mark/Documents/GitHub/MacZip/Sources/ArchiveCore/archive_core.cpp","-o","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/ArchiveCore.build/archive_core.cpp.o"]
+    deps: "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/ArchiveCore.build/archive_core.cpp.d"
+
+  "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveCLI.build/main.cpp.o":
+    tool: clang
+    inputs: ["/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveCLI/main.cpp"]
+    outputs: ["/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveCLI.build/main.cpp.o"]
+    description: "Compiling MyArchiveCLI main.cpp"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/clang","-fobjc-arc","-target","arm64-apple-macosx12.0","-O2","-DSWIFT_PACKAGE=1","-fblocks","-I","/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveCLI/include","-I","/Users/mark/Documents/GitHub/MacZip/Sources/ArchiveCore/include","-fmodule-map-file=/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/ArchiveCore.build/module.modulemap","-fmodule-map-file=/Users/mark/Documents/GitHub/MacZip/Sources/CZlib/module.modulemap","-fmodule-map-file=/Users/mark/Documents/GitHub/MacZip/Sources/COpenSSL/module.modulemap","-I/opt/homebrew/Cellar/openssl@3/3.6.1/include","-std=c++17","-isysroot","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-fPIC","-g","-g","-MD","-MT","dependencies","-MF","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveCLI.build/main.cpp.d","-std=c++17","-c","/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveCLI/main.cpp","-o","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveCLI.build/main.cpp.o"]
+    deps: "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveCLI.build/main.cpp.d"
+
+  "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/AppEntry.swift","/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/ContentView.swift","/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/ZipExtractor.swift"]
+    outputs: ["/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/sources"]
+    description: "Write auxiliary file /Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/sources"
+
+  "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.product/Objects.LinkFileList":
+    tool: write-auxiliary-file
+    inputs: ["<link-file-list>","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/AppEntry.swift.o","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/ContentView.swift.o","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/ZipExtractor.swift.o"]
+    outputs: ["/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.product/Objects.LinkFileList"]
+    description: "Write auxiliary file /Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.product/Objects.LinkFileList"
+
+  "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/myarchive-cli.product/Objects.LinkFileList":
+    tool: write-auxiliary-file
+    inputs: ["<link-file-list>","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/ArchiveCore.build/archive_core.cpp.o","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveCLI.build/main.cpp.o"]
+    outputs: ["/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/myarchive-cli.product/Objects.LinkFileList"]
+    description: "Write auxiliary file /Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/myarchive-cli.product/Objects.LinkFileList"
+
+  "/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/swift-version--1AB21518FC5DEDBE.txt":
+    tool: write-auxiliary-file
+    inputs: ["<swift-get-version>","/Library/Developer/CommandLineTools/usr/bin/swiftc"]
+    outputs: ["/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/swift-version--1AB21518FC5DEDBE.txt"]
+    always-out-of-date: "true"
+    description: "Write auxiliary file /Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/swift-version--1AB21518FC5DEDBE.txt"
+
+  "<ArchiveBridge-release.module>":
+    tool: phony
+    inputs: ["/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/ArchiveBridge.build/archive_bridge.cpp.o"]
+    outputs: ["<ArchiveBridge-release.module>"]
+
+  "<ArchiveCore-release.module>":
+    tool: phony
+    inputs: ["/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/ArchiveCore.build/archive_core.cpp.o"]
+    outputs: ["<ArchiveCore-release.module>"]
+
+  "<MyArchiveCLI-release.module>":
+    tool: phony
+    inputs: ["/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveCLI.build/main.cpp.o"]
+    outputs: ["<MyArchiveCLI-release.module>"]
+
+  "<MyArchiveGUI-release.exe>":
+    tool: phony
+    inputs: ["/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI"]
+    outputs: ["<MyArchiveGUI-release.exe>"]
+
+  "<MyArchiveGUI-release.module>":
+    tool: phony
+    inputs: ["/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/AppEntry.swift.o","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/ContentView.swift.o","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/ZipExtractor.swift.o","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.swiftmodule"]
+    outputs: ["<MyArchiveGUI-release.module>"]
+
+  "<myarchive-cli-release.exe>":
+    tool: phony
+    inputs: ["/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/myarchive-cli"]
+    outputs: ["<myarchive-cli-release.exe>"]
+
+  "C.MyArchiveGUI-release.exe":
+    tool: shell
+    inputs: ["/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/AppEntry.swift.o","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/ContentView.swift.o","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/ZipExtractor.swift.o","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.product/Objects.LinkFileList"]
+    outputs: ["/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI"]
+    description: "Linking /Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-L","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release","-o","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI","-module-name","MyArchiveGUI","-emit-executable","-Xlinker","-dead_strip","-Xlinker","-alias","-Xlinker","_MyArchiveGUI_main","-Xlinker","_main","-Xlinker","-rpath","-Xlinker","@loader_path","@/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.product/Objects.LinkFileList","-target","arm64-apple-macosx12.0","-framework","AppKit","-framework","SwiftUI","-framework","UniformTypeIdentifiers","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g"]
+
+  "C.MyArchiveGUI-release.module":
+    tool: shell
+    inputs: ["/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/AppEntry.swift","/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/ContentView.swift","/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/ZipExtractor.swift","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/swift-version--1AB21518FC5DEDBE.txt","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/sources"]
+    outputs: ["/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/AppEntry.swift.o","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/ContentView.swift.o","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/ZipExtractor.swift.o","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.swiftmodule"]
+    description: "Compiling Swift Module 'MyArchiveGUI' (3 sources)"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-module-name","MyArchiveGUI","-emit-dependencies","-emit-module","-emit-module-path","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.swiftmodule","-output-file-map","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/output-file-map.json","-whole-module-optimization","-num-threads","8","-c","@/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveGUI.build/sources","-I","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release","-target","arm64-apple-macosx12.0","-swift-version","5","-O","-j8","-DSWIFT_PACKAGE","-module-cache-path","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/ModuleCache","-parseable-output","-Xfrontend","-entry-point-function-name","-Xfrontend","MyArchiveGUI_main","-color-diagnostics","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g","-Xcc","-isysroot","-Xcc","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-Xcc","-fPIC","-Xcc","-g","-package-name","maczip"]
+
+  "C.myarchive-cli-release.exe":
+    tool: shell
+    inputs: ["/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/ArchiveCore.build/archive_core.cpp.o","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/MyArchiveCLI.build/main.cpp.o","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/myarchive-cli.product/Objects.LinkFileList"]
+    outputs: ["/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/myarchive-cli"]
+    description: "Linking /Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/myarchive-cli"
+    args: ["/Library/Developer/CommandLineTools/usr/bin/swiftc","-L/opt/homebrew/Cellar/openssl@3/3.6.1/lib","-lssl","-L/opt/homebrew/Cellar/openssl@3/3.6.1/lib","-lcrypto","-lc++","-L","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release","-o","/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/myarchive-cli","-module-name","myarchive_cli","-emit-executable","-Xlinker","-dead_strip","-Xlinker","-rpath","-Xlinker","@loader_path","@/Users/mark/Documents/GitHub/MacZip/.build/arm64-apple-macosx/release/myarchive-cli.product/Objects.LinkFileList","-runtime-compatibility-version","none","-target","arm64-apple-macosx12.0","-lcrypto","-lz","-sdk","/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk","-g"]
+
+  "PackageStructure":
+    tool: package-structure-tool
+    inputs: ["/Users/mark/Documents/GitHub/MacZip/Sources/ArchiveBridge/","/Users/mark/Documents/GitHub/MacZip/Sources/ArchiveCore/","/Users/mark/Documents/GitHub/MacZip/Sources/COpenSSL/","/Users/mark/Documents/GitHub/MacZip/Sources/CZlib/","/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveCLI/","/Users/mark/Documents/GitHub/MacZip/Sources/MyArchiveGUI/","/Users/mark/Documents/GitHub/MacZip/Package.swift","/Users/mark/Documents/GitHub/MacZip/Package.resolved"]
+    outputs: ["<PackageStructure>"]
+    description: "Planning build"
+    allow-missing-inputs: true
+
