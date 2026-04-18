@@ -19,6 +19,5 @@ struct MarkMacZipApp: App {
             )
             .preferredColorScheme(selectedTheme == .dark ? .dark : .light)
         }
-        .windowResizability(.contentSize)
     }
 }

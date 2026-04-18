@@ -307,7 +307,7 @@ struct ContentView: View {
         }
         .padding(24)
         .frame(minWidth: 980, minHeight: 640)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(Color(NSColor.windowBackgroundColor))
         .onAppear {
             viewModel.updateLanguage(selectedLanguage)
         }
@@ -323,7 +323,7 @@ struct ContentView: View {
 
             Text(AppStrings.subtitle(for: selectedLanguage))
                 .font(.title3)
-                .foregroundStyle(.secondary)
+                .foregroundColor(.secondary)
         }
     }
 
@@ -331,24 +331,24 @@ struct ContentView: View {
         VStack(spacing: 14) {
             Image(systemName: "tray.and.arrow.down.fill")
                 .font(.system(size: 42))
-                .foregroundStyle(viewModel.isDropTargeted ? Color.accentColor : .secondary)
+                .foregroundColor(viewModel.isDropTargeted ? Color.accentColor : .secondary)
 
             Text(AppStrings.dropTitle(for: selectedLanguage))
                 .font(.title2.weight(.semibold))
 
             Text(AppStrings.dropSubtitle(for: selectedLanguage))
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
+                .foregroundColor(.secondary)
                 .frame(maxWidth: 500)
 
             Text(viewModel.selectedItemSummary)
                 .font(.headline)
-                .foregroundStyle(.primary)
+                .foregroundColor(.primary)
         }
         .frame(maxWidth: .infinity, minHeight: 230)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor))
+                .fill(Color(NSColor.controlBackgroundColor))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
@@ -370,7 +370,7 @@ struct ContentView: View {
                 ForEach(viewModel.selectedItems, id: \.path) { item in
                     HStack(spacing: 10) {
                         Image(systemName: item.pathExtension.lowercased() == "zip" ? "doc.zipper" : "folder")
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundColor(Color.accentColor)
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text(item.lastPathComponent)
@@ -378,7 +378,7 @@ struct ContentView: View {
 
                             Text(item.path)
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundColor(.secondary)
                                 .lineLimit(1)
                         }
                     }
@@ -386,7 +386,7 @@ struct ContentView: View {
 
                 if viewModel.selectedItems.isEmpty {
                     Text(AppStrings.noSelectedItems(for: selectedLanguage))
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(.secondary)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -436,7 +436,7 @@ struct ContentView: View {
 
             HStack(spacing: 10) {
                 Image(systemName: "folder")
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(.secondary)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(AppStrings.outputFolderTitle(for: selectedLanguage))
@@ -444,7 +444,7 @@ struct ContentView: View {
 
                     Text(viewModel.outputFolderPath)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundColor(.secondary)
                         .lineLimit(2)
                 }
             }
@@ -498,7 +498,6 @@ struct ContentView: View {
         GroupBox {
             Text(viewModel.statusText)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .textSelection(.enabled)
                 .padding(.vertical, 2)
         } label: {
             Text(AppStrings.statusTitle(for: selectedLanguage))
@@ -510,7 +509,7 @@ struct ContentView: View {
         GroupBox {
             if historyStore.items.isEmpty {
                 Text(AppStrings.noHistory(for: selectedLanguage))
-                    .foregroundStyle(.secondary)
+                    .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             } else {
                 ScrollView {
@@ -526,27 +525,27 @@ struct ContentView: View {
 
                                     Text(AppStrings.historyResult(item.wasSuccessful, for: selectedLanguage))
                                         .font(.caption.weight(.semibold))
-                                        .foregroundStyle(item.wasSuccessful ? .green : .red)
+                                        .foregroundColor(item.wasSuccessful ? .green : .red)
                                 }
 
                                 Text(item.action.title(for: selectedLanguage))
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundColor(.secondary)
 
                                 Text(item.outputLocation)
                                     .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundColor(.secondary)
                                     .lineLimit(2)
 
                                 Text(item.detail)
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundColor(.secondary)
                             }
                             .padding(12)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(
                                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .fill(Color(nsColor: .controlBackgroundColor))
+                                    .fill(Color(NSColor.controlBackgroundColor))
                             )
                         }
                     }
