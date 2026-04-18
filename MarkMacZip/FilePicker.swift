@@ -2,11 +2,16 @@ import AppKit
 import UniformTypeIdentifiers
 
 enum FilePicker {
+    private static var currentLanguage: AppLanguage {
+        let rawValue = UserDefaults.standard.string(forKey: "appLanguage") ?? ""
+        return AppLanguage(rawValue: rawValue) ?? .simplifiedChinese
+    }
+
     static func chooseFilesOrFolders() -> [URL] {
         let panel = NSOpenPanel()
-        panel.title = AppStrings.selectFileButton
-        panel.message = "Choose files, folders, or zip archives."
-        panel.prompt = AppStrings.selectFileButton
+        panel.title = AppStrings.selectFileButton(for: currentLanguage)
+        panel.message = AppStrings.pickerSelectMessage(for: currentLanguage)
+        panel.prompt = AppStrings.selectFileButton(for: currentLanguage)
         panel.canChooseFiles = true
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = true
@@ -18,9 +23,9 @@ enum FilePicker {
 
     static func chooseOutputFolder() -> URL? {
         let panel = NSOpenPanel()
-        panel.title = AppStrings.chooseOutputButton
-        panel.message = "Choose where MarkMacZip should save the result."
-        panel.prompt = AppStrings.chooseOutputButton
+        panel.title = AppStrings.chooseOutputButton(for: currentLanguage)
+        panel.message = AppStrings.pickerOutputMessage(for: currentLanguage)
+        panel.prompt = AppStrings.chooseOutputButton(for: currentLanguage)
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true

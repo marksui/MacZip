@@ -8,12 +8,17 @@ enum ArchiveServiceError: LocalizedError {
     case compressionFailed(String)
     case unsupportedSelection
 
+    private var currentLanguage: AppLanguage {
+        let rawValue = UserDefaults.standard.string(forKey: "appLanguage") ?? ""
+        return AppLanguage(rawValue: rawValue) ?? .simplifiedChinese
+    }
+
     var errorDescription: String? {
         switch self {
         case .invalidFileType:
             return "Please choose a .zip file to extract."
         case .missingOutputFolder:
-            return AppStrings.missingOutputFolder
+            return AppStrings.missingOutputFolder(for: currentLanguage)
         case let .permissionDenied(path):
             return "MarkMacZip does not have permission to use \(path)."
         case let .extractionFailed(reason):

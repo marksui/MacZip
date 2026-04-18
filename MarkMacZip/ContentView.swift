@@ -6,33 +6,36 @@ import AppKit
 final class ContentViewModel: ObservableObject {
     @Published var selectedItems: [URL] = []
     @Published var outputFolder: URL?
-    @Published var statusText = AppStrings.idleStatus
+    @Published var statusText: String
     @Published var isWorking = false
     @Published var isDropTargeted = false
     @Published var compressionPassword = ""
 
     private let archiveService: ArchiveService
     private let historyStore: HistoryStore
+    private var language: AppLanguage
 
-    init(archiveService: ArchiveService, historyStore: HistoryStore) {
+    init(archiveService: ArchiveService, historyStore: HistoryStore, language: AppLanguage) {
         self.archiveService = archiveService
         self.historyStore = historyStore
+        self.language = language
+        self.statusText = AppStrings.idleStatus(for: language)
     }
 
     var selectedItemSummary: String {
         if selectedItems.isEmpty {
-            return AppStrings.noSelectedItems
+            return AppStrings.noSelectedItems(for: language)
         }
 
         if selectedItems.count == 1 {
             return selectedItems[0].lastPathComponent
         }
 
-        return "\(selectedItems.count) items selected"
+        return AppStrings.selectedItemsCount(selectedItems.count, for: language)
     }
 
     var outputFolderPath: String {
-        outputFolder?.path ?? AppStrings.noOutputFolder
+        outputFolder?.path ?? AppStrings.noOutputFolder(for: language)
     }
 
     var canExtract: Bool {
@@ -41,6 +44,14 @@ final class ContentViewModel: ObservableObject {
 
     var canCompress: Bool {
         !isWorking && !selectedItems.isEmpty && outputFolder != nil
+    }
+
+    func updateLanguage(_ language: AppLanguage) {
+        self.language = language
+
+        if !isWorking {
+            statusText = selectedItems.isEmpty ? AppStrings.idleStatus(for: language) : AppStrings.selectedStatus(for: language)
+        }
     }
 
     func chooseItems() {
@@ -61,28 +72,28 @@ final class ContentViewModel: ObservableObject {
     func chooseOutputFolder() {
         if let folder = FilePicker.chooseOutputFolder() {
             outputFolder = folder
-            statusText = "Output folder is ready: \(folder.lastPathComponent)"
+            statusText = AppStrings.outputFolderReady(folder.lastPathComponent, for: language)
         }
     }
 
     func extractSelected() {
         guard let outputFolder else {
-            statusText = AppStrings.missingOutputFolder
+            statusText = AppStrings.missingOutputFolder(for: language)
             return
         }
 
         guard !selectedItems.isEmpty else {
-            statusText = AppStrings.noSelectedItems
+            statusText = AppStrings.noSelectedItems(for: language)
             return
         }
 
         guard selectedItems.allSatisfy({ $0.pathExtension.lowercased() == "zip" }) else {
-            statusText = AppStrings.invalidZipSelection
+            statusText = AppStrings.invalidZipSelection(for: language)
             return
         }
 
         isWorking = true
-        statusText = selectedItems.count > 1 ? AppStrings.extractingMultipleStatus : AppStrings.extractingStatus
+        statusText = selectedItems.count > 1 ? AppStrings.extractingMultipleStatus(for: language) : AppStrings.extractingStatus(for: language)
 
         let archives = selectedItems
         let archiveService = self.archiveService
@@ -98,17 +109,17 @@ final class ContentViewModel: ObservableObject {
 
     func compressSelected() {
         guard let outputFolder else {
-            statusText = AppStrings.missingOutputFolder
+            statusText = AppStrings.missingOutputFolder(for: language)
             return
         }
 
         guard !selectedItems.isEmpty else {
-            statusText = AppStrings.noSelectedItems
+            statusText = AppStrings.noSelectedItems(for: language)
             return
         }
 
         isWorking = true
-        statusText = selectedItems.count > 1 ? AppStrings.compressingMultipleStatus : AppStrings.compressingStatus
+        statusText = selectedItems.count > 1 ? AppStrings.compressingMultipleStatus(for: language) : AppStrings.compressingStatus(for: language)
 
         let items = selectedItems
         let archiveService = self.archiveService
@@ -131,11 +142,11 @@ final class ContentViewModel: ObservableObject {
         }
 
         guard !fileProviders.isEmpty else {
-            statusText = AppStrings.invalidDrop
+            statusText = AppStrings.invalidDrop(for: language)
             return false
         }
 
-        statusText = AppStrings.preparingDropStatus
+        statusText = AppStrings.preparingDropStatus(for: language)
 
         let group = DispatchGroup()
         let storageQueue = DispatchQueue(label: "MarkMacZip.DropStorage")
@@ -174,12 +185,12 @@ final class ContentViewModel: ObservableObject {
         let cleanedItems = uniqueExistingURLs(from: urls)
 
         guard !cleanedItems.isEmpty else {
-            statusText = AppStrings.invalidDrop
+            statusText = AppStrings.invalidDrop(for: language)
             return
         }
 
         selectedItems = cleanedItems
-        statusText = AppStrings.selectedStatus
+        statusText = AppStrings.selectedStatus(for: language)
     }
 
     private func uniqueExistingURLs(from urls: [URL]) -> [URL] {
@@ -219,32 +230,63 @@ final class ContentViewModel: ObservableObject {
 
         if successCount == results.count {
             if results.first?.action == .extract {
-                statusText = results.count == 1 ? AppStrings.successSingleExtract : "Finished extracting \(results.count) archives."
+                statusText = results.count == 1 ? AppStrings.successSingleExtract(for: language) : AppStrings.finishedExtracting(results.count, for: language)
             } else {
-                statusText = AppStrings.successSingleCompress
+                statusText = AppStrings.successSingleCompress(for: language)
             }
             return
         }
 
         if successCount > 0 {
-            statusText = AppStrings.partialSuccess
+            statusText = AppStrings.partialSuccess(for: language)
             return
         }
 
-        statusText = results.first?.message ?? AppStrings.failureSummary
+        statusText = results.first?.message ?? AppStrings.failureSummary(for: language)
     }
 }
 
 struct ContentView: View {
     @ObservedObject private var historyStore: HistoryStore
+    @Binding private var appThemeRawValue: String
+    @Binding private var appLanguageRawValue: String
     @StateObject private var viewModel: ContentViewModel
 
-    init(historyStore: HistoryStore) {
+    private var selectedTheme: AppTheme {
+        get { AppTheme(rawValue: appThemeRawValue) ?? .light }
+        nonmutating set { appThemeRawValue = newValue.rawValue }
+    }
+
+    private var selectedLanguage: AppLanguage {
+        get { AppLanguage(rawValue: appLanguageRawValue) ?? .simplifiedChinese }
+        nonmutating set { appLanguageRawValue = newValue.rawValue }
+    }
+
+    private var themeBinding: Binding<AppTheme> {
+        Binding(
+            get: { selectedTheme },
+            set: { selectedTheme = $0 }
+        )
+    }
+
+    private var languageBinding: Binding<AppLanguage> {
+        Binding(
+            get: { selectedLanguage },
+            set: { selectedLanguage = $0 }
+        )
+    }
+
+    init(historyStore: HistoryStore, appThemeRawValue: Binding<String>, appLanguageRawValue: Binding<String>) {
         self.historyStore = historyStore
+        _appThemeRawValue = appThemeRawValue
+        _appLanguageRawValue = appLanguageRawValue
+
+        let initialLanguage = AppLanguage(rawValue: appLanguageRawValue.wrappedValue) ?? .simplifiedChinese
         _viewModel = StateObject(
             wrappedValue: ContentViewModel(
                 archiveService: ArchiveService(),
-                historyStore: historyStore
+                historyStore: historyStore,
+                language: initialLanguage
             )
         )
     }
@@ -266,6 +308,12 @@ struct ContentView: View {
         .padding(24)
         .frame(minWidth: 980, minHeight: 640)
         .background(Color(nsColor: .windowBackgroundColor))
+        .onAppear {
+            viewModel.updateLanguage(selectedLanguage)
+        }
+        .onChange(of: appLanguageRawValue) { _ in
+            viewModel.updateLanguage(selectedLanguage)
+        }
     }
 
     private var header: some View {
@@ -273,7 +321,7 @@ struct ContentView: View {
             Text(AppStrings.appTitle)
                 .font(.system(size: 30, weight: .bold))
 
-            Text(AppStrings.subtitle)
+            Text(AppStrings.subtitle(for: selectedLanguage))
                 .font(.title3)
                 .foregroundStyle(.secondary)
         }
@@ -285,10 +333,10 @@ struct ContentView: View {
                 .font(.system(size: 42))
                 .foregroundStyle(viewModel.isDropTargeted ? Color.accentColor : .secondary)
 
-            Text(AppStrings.dropTitle)
+            Text(AppStrings.dropTitle(for: selectedLanguage))
                 .font(.title2.weight(.semibold))
 
-            Text(AppStrings.dropSubtitle)
+            Text(AppStrings.dropSubtitle(for: selectedLanguage))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: 500)
@@ -337,13 +385,13 @@ struct ContentView: View {
                 }
 
                 if viewModel.selectedItems.isEmpty {
-                    Text(AppStrings.noSelectedItems)
+                    Text(AppStrings.noSelectedItems(for: selectedLanguage))
                         .foregroundStyle(.secondary)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         } label: {
-            Text(AppStrings.selectedItemsTitle)
+            Text(AppStrings.selectedItemsTitle(for: selectedLanguage))
                 .font(.headline)
         }
     }
@@ -351,35 +399,37 @@ struct ContentView: View {
     private var controls: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 12) {
-                Button(AppStrings.selectFileButton) {
+                Button(AppStrings.selectFileButton(for: selectedLanguage)) {
                     viewModel.chooseItems()
                 }
 
-                Button(AppStrings.addFileButton) {
+                Button(AppStrings.addFileButton(for: selectedLanguage)) {
                     viewModel.addItems()
                 }
 
-                Button(AppStrings.chooseOutputButton) {
+                Button(AppStrings.chooseOutputButton(for: selectedLanguage)) {
                     viewModel.chooseOutputFolder()
                 }
 
-                Button(AppStrings.extractButton) {
+                Button(AppStrings.extractButton(for: selectedLanguage)) {
                     viewModel.extractSelected()
                 }
                 .keyboardShortcut(.defaultAction)
                 .disabled(!viewModel.canExtract)
 
-                Button(AppStrings.compressButton) {
+                Button(AppStrings.compressButton(for: selectedLanguage)) {
                     viewModel.compressSelected()
                 }
                 .disabled(!viewModel.canCompress)
             }
 
+            settingsCard
+
             VStack(alignment: .leading, spacing: 8) {
-                Text(AppStrings.zipPasswordTitle)
+                Text(AppStrings.zipPasswordTitle(for: selectedLanguage))
                     .font(.headline)
 
-                SecureField(AppStrings.zipPasswordPlaceholder, text: $viewModel.compressionPassword)
+                SecureField(AppStrings.zipPasswordPlaceholder(for: selectedLanguage), text: $viewModel.compressionPassword)
                     .textFieldStyle(.roundedBorder)
                     .disabled(viewModel.isWorking)
             }
@@ -389,7 +439,7 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(AppStrings.outputFolderTitle)
+                    Text(AppStrings.outputFolderTitle(for: selectedLanguage))
                         .font(.headline)
 
                     Text(viewModel.outputFolderPath)
@@ -406,6 +456,44 @@ struct ContentView: View {
         }
     }
 
+    private var settingsCard: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 12) {
+                    Text(AppStrings.themeTitle(for: selectedLanguage))
+                        .frame(width: 60, alignment: .leading)
+
+                    Picker(AppStrings.themeTitle(for: selectedLanguage), selection: themeBinding) {
+                        ForEach(AppTheme.allCases) { theme in
+                            Text(theme.title(for: selectedLanguage)).tag(theme)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .frame(maxWidth: 260)
+                }
+
+                HStack(spacing: 12) {
+                    Text(AppStrings.languageTitle(for: selectedLanguage))
+                        .frame(width: 60, alignment: .leading)
+
+                    Picker(AppStrings.languageTitle(for: selectedLanguage), selection: languageBinding) {
+                        ForEach(AppLanguage.allCases) { language in
+                            Text(language.displayName).tag(language)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .frame(maxWidth: 260)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } label: {
+            Text(AppStrings.settingsTitle(for: selectedLanguage))
+                .font(.headline)
+        }
+    }
+
     private var statusCard: some View {
         GroupBox {
             Text(viewModel.statusText)
@@ -413,7 +501,7 @@ struct ContentView: View {
                 .textSelection(.enabled)
                 .padding(.vertical, 2)
         } label: {
-            Text(AppStrings.statusTitle)
+            Text(AppStrings.statusTitle(for: selectedLanguage))
                 .font(.headline)
         }
     }
@@ -421,7 +509,7 @@ struct ContentView: View {
     private var historyPanel: some View {
         GroupBox {
             if historyStore.items.isEmpty {
-                Text(AppStrings.noHistory)
+                Text(AppStrings.noHistory(for: selectedLanguage))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             } else {
@@ -436,12 +524,12 @@ struct ContentView: View {
 
                                     Spacer()
 
-                                    Text(item.wasSuccessful ? "Success" : "Failed")
+                                    Text(AppStrings.historyResult(item.wasSuccessful, for: selectedLanguage))
                                         .font(.caption.weight(.semibold))
                                         .foregroundStyle(item.wasSuccessful ? .green : .red)
                                 }
 
-                                Text(item.action.title)
+                                Text(item.action.title(for: selectedLanguage))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
 
@@ -465,7 +553,7 @@ struct ContentView: View {
                 }
             }
         } label: {
-            Text(AppStrings.historyTitle)
+            Text(AppStrings.historyTitle(for: selectedLanguage))
                 .font(.headline)
         }
     }
