@@ -401,13 +401,6 @@ struct ContentView: View {
         )
     }
 
-    private var fontScaleBinding: Binding<Double> {
-        Binding(
-            get: { appFontScale },
-            set: { appFontScale = min(max($0, 0.85), 1.35) }
-        )
-    }
-
     init(
         historyStore: HistoryStore,
         appThemeRawValue: Binding<String>,
@@ -431,13 +424,16 @@ struct ContentView: View {
 
     var body: some View {
         HStack(spacing: 20) {
-            VStack(alignment: .leading, spacing: 18) {
-                header
-                dropArea
-                selectedItemsCard
-                controls
-                progressCard
-                statusCard
+            ScrollView(.vertical, showsIndicators: true) {
+                VStack(alignment: .leading, spacing: 18) {
+                    header
+                    dropArea
+                    selectedItemsCard
+                    controls
+                    progressCard
+                    statusCard
+                }
+                .frame(maxWidth: .infinity, alignment: .topLeading)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
@@ -581,11 +577,13 @@ struct ContentView: View {
                     viewModel.extractSelected()
                 }
                 .keyboardShortcut(.defaultAction)
+                .buttonStyle(PrimaryActionButtonStyle(tint: Color.accentColor))
                 .disabled(!viewModel.canExtract)
 
                 Button(AppStrings.compressButton(for: selectedLanguage)) {
                     viewModel.compressSelected()
                 }
+                .buttonStyle(PrimaryActionButtonStyle(tint: Color.green))
                 .disabled(!viewModel.canCompress)
             }
 
@@ -722,8 +720,23 @@ struct ContentView: View {
                 Text(AppStrings.fontSizeTitle(for: selectedLanguage))
                     .frame(width: 72, alignment: .leading)
 
-                Slider(value: fontScaleBinding, in: 0.85 ... 1.35, step: 0.05)
-                    .frame(width: 170)
+                Button {
+                    appFontScale = max(0.85, appFontScale - 0.05)
+                } label: {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.system(size: 16))
+                }
+                .buttonStyle(.plain)
+                .disabled(appFontScale <= 0.85)
+
+                Button {
+                    appFontScale = min(1.35, appFontScale + 0.05)
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 16))
+                }
+                .buttonStyle(.plain)
+                .disabled(appFontScale >= 1.35)
 
                 Text("\(Int(appFontScale * 100))%")
                     .foregroundColor(.secondary)
@@ -747,12 +760,12 @@ struct ContentView: View {
 
     private var historyPanel: some View {
         GroupBox {
-            if historyStore.items.isEmpty {
-                Text(AppStrings.noHistory(for: selectedLanguage))
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            } else {
-                ScrollView {
+            ScrollView(.vertical, showsIndicators: true) {
+                if historyStore.items.isEmpty {
+                    Text(AppStrings.noHistory(for: selectedLanguage))
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                } else {
                     VStack(alignment: .leading, spacing: 12) {
                         ForEach(historyStore.items) { item in
                             VStack(alignment: .leading, spacing: 6) {
@@ -804,5 +817,22 @@ struct ContentView: View {
             Text(AppStrings.historyTitle(for: selectedLanguage))
                 .font(.headline)
         }
+    }
+}
+
+private struct PrimaryActionButtonStyle: ButtonStyle {
+    let tint: Color
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline)
+            .foregroundColor(.white)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 7)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(tint.opacity(configuration.isPressed ? 0.75 : 1))
+            )
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
     }
 }
