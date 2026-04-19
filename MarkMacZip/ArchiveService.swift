@@ -210,24 +210,37 @@ struct ArchiveService {
 
         switch format {
         case .zip:
-            let relativePaths = itemURLs.map { relativePath(for: $0, from: parentFolder) }
-            let progressTotal = totalProgressUnits(for: itemURLs)
-            var zipArguments = ["-r", "-y"]
-            if let password {
-                zipArguments += ["-P", password]
-            }
-            zipArguments.append(destinationURL.path)
-            zipArguments += relativePaths
+            // For large single-file ZIP operations, ditto is usually more stable on macOS.
+            if itemURLs.count == 1, password == nil {
+                try runProcessStreaming(
+                    executablePath: "/usr/bin/ditto",
+                    arguments: ["-c", "-k", "--sequesterRsrc", "--keepParent", itemURLs[0].path, destinationURL.path],
+                    currentDirectory: nil,
+                    estimatedTotalUnits: nil,
+                    shouldCountLine: { _ in false },
+                    progressFromLine: nil,
+                    progressHandler: progressHandler
+                )
+            } else {
+                let relativePaths = itemURLs.map { relativePath(for: $0, from: parentFolder) }
+                let progressTotal = totalProgressUnits(for: itemURLs)
+                var zipArguments = ["-r", "-y"]
+                if let password {
+                    zipArguments += ["-P", password]
+                }
+                zipArguments.append(destinationURL.path)
+                zipArguments += relativePaths
 
-            try runProcessStreaming(
-                executablePath: "/usr/bin/zip",
-                arguments: zipArguments,
-                currentDirectory: parentFolder,
-                estimatedTotalUnits: progressTotal,
-                shouldCountLine: { line in line.contains("adding:") || line.contains("updating:") },
-                progressFromLine: nil,
-                progressHandler: progressHandler
-            )
+                try runProcessStreaming(
+                    executablePath: "/usr/bin/zip",
+                    arguments: zipArguments,
+                    currentDirectory: parentFolder,
+                    estimatedTotalUnits: progressTotal,
+                    shouldCountLine: { line in line.contains("adding:") || line.contains("updating:") },
+                    progressFromLine: nil,
+                    progressHandler: progressHandler
+                )
+            }
 
         case .tar:
             let relativePaths = itemURLs.map { relativePath(for: $0, from: parentFolder) }
