@@ -49,10 +49,6 @@ final class ContentViewModel: ObservableObject {
         outputFolder?.path ?? AppStrings.noOutputFolder(for: language)
     }
 
-    var shouldShowPasswordField: Bool {
-        selectedCompressionFormat.supportsPassword
-    }
-
     var canExtract: Bool {
         guard !isWorking, !selectedItems.isEmpty, outputFolder != nil else {
             return false
@@ -152,10 +148,12 @@ final class ContentViewModel: ObservableObject {
 
         let archives = selectedItems
         let service = self.archiveService
+        let normalizedPassword = compressionPassword.trimmingCharacters(in: .whitespacesAndNewlines)
+        let extractionPassword = normalizedPassword.isEmpty ? nil : normalizedPassword
 
         DispatchQueue.global(qos: .userInitiated).async {
             let startSnapshot = Self.captureResourceUsageSnapshot()
-            let results = service.extractArchives(archives, to: outputFolder) { progress in
+            let results = service.extractArchives(archives, to: outputFolder, password: extractionPassword) { progress in
                 DispatchQueue.main.async { [weak self] in
                     self?.applyProgress(progress)
                 }
@@ -728,15 +726,13 @@ struct ContentView: View {
                     .disabled(viewModel.isWorking)
             }
 
-            if viewModel.shouldShowPasswordField {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(AppStrings.archivePasswordTitle(for: selectedLanguage))
-                        .font(.headline)
+            VStack(alignment: .leading, spacing: 8) {
+                Text(AppStrings.archivePasswordTitle(for: selectedLanguage))
+                    .font(.headline)
 
-                    SecureField(AppStrings.archivePasswordPlaceholder(for: selectedLanguage), text: $viewModel.compressionPassword)
-                        .textFieldStyle(.roundedBorder)
-                        .disabled(viewModel.isWorking)
-                }
+                SecureField(AppStrings.archivePasswordPlaceholder(for: selectedLanguage), text: $viewModel.compressionPassword)
+                    .textFieldStyle(.roundedBorder)
+                    .disabled(viewModel.isWorking)
             }
         }
     }
@@ -860,9 +856,19 @@ struct ContentView: View {
 
     private var statusCard: some View {
         GroupBox {
-            Text(viewModel.statusText)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 2)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(viewModel.statusText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Button(AppStrings.copyStatusButton(for: selectedLanguage)) {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(viewModel.statusText, forType: .string)
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+            .padding(.vertical, 2)
         } label: {
             Text(AppStrings.statusTitle(for: selectedLanguage))
                 .font(.headline)

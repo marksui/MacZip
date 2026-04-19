@@ -61,6 +61,7 @@ struct ArchiveService {
     func extractArchives(
         _ archiveURLs: [URL],
         to outputFolder: URL,
+        password: String? = nil,
         progressHandler: ((ArchiveOperationProgress) -> Void)? = nil
     ) -> [ArchiveOperationResult] {
         do {
@@ -81,7 +82,7 @@ struct ArchiveService {
         var results: [ArchiveOperationResult] = []
 
         for (index, archiveURL) in archiveURLs.enumerated() {
-            let result = extractSingleArchive(archiveURL, to: outputFolder) { itemProgress in
+            let result = extractSingleArchive(archiveURL, to: outputFolder, password: password) { itemProgress in
                 guard let progressHandler else { return }
 
                 if let itemFraction = itemProgress.fractionCompleted {
@@ -154,6 +155,7 @@ struct ArchiveService {
     private func extractSingleArchive(
         _ archiveURL: URL,
         to outputFolder: URL,
+        password: String?,
         progressHandler: ((ArchiveOperationProgress) -> Void)?
     ) -> ArchiveOperationResult {
         do {
@@ -167,9 +169,9 @@ struct ArchiveService {
 
             switch format {
             case .zip:
-                return try extractZip(archiveURL, to: outputFolder, progressHandler: progressHandler)
+                return try extractZip(archiveURL, to: outputFolder, password: password, progressHandler: progressHandler)
             case .sevenZ:
-                return try extractSevenZ(archiveURL, to: outputFolder, progressHandler: progressHandler)
+                return try extractSevenZ(archiveURL, to: outputFolder, password: password, progressHandler: progressHandler)
             case .tar:
                 return try extractTar(archiveURL, to: outputFolder, progressHandler: progressHandler)
             case .tarGz:
@@ -329,6 +331,7 @@ struct ArchiveService {
     private func extractZip(
         _ archiveURL: URL,
         to outputFolder: URL,
+        password: String?,
         progressHandler: ((ArchiveOperationProgress) -> Void)?
     ) throws -> ArchiveOperationResult {
         let destinationFolder = uniqueDestination(
@@ -341,9 +344,15 @@ struct ArchiveService {
 
         let totalEntries = max((try? countOutputLines(executablePath: "/usr/bin/unzip", arguments: ["-Z1", archiveURL.path])) ?? 0, 1)
 
+        var arguments = ["-o"]
+        if let password, !password.isEmpty {
+            arguments += ["-P", password]
+        }
+        arguments += [archiveURL.path, "-d", destinationFolder.path]
+
         try runProcessStreaming(
             executablePath: "/usr/bin/unzip",
-            arguments: ["-o", archiveURL.path, "-d", destinationFolder.path],
+            arguments: arguments,
             currentDirectory: nil,
             estimatedTotalUnits: totalEntries,
             shouldCountLine: { line in
@@ -460,6 +469,7 @@ struct ArchiveService {
     private func extractSevenZ(
         _ archiveURL: URL,
         to outputFolder: URL,
+        password: String?,
         progressHandler: ((ArchiveOperationProgress) -> Void)?
     ) throws -> ArchiveOperationResult {
         guard let executablePath = Self.sevenZipExecutablePath() else {
@@ -474,9 +484,14 @@ struct ArchiveService {
 
         try fileManager.createDirectory(at: destinationFolder, withIntermediateDirectories: true)
 
+        var arguments = ["x", archiveURL.path, "-o\(destinationFolder.path)", "-y"]
+        if let password, !password.isEmpty {
+            arguments.append("-p\(password)")
+        }
+
         try runProcessStreaming(
             executablePath: executablePath,
-            arguments: ["x", archiveURL.path, "-o\(destinationFolder.path)", "-y"],
+            arguments: arguments,
             currentDirectory: nil,
             estimatedTotalUnits: nil,
             shouldCountLine: { _ in false },

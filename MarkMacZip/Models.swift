@@ -233,11 +233,15 @@ enum AppStrings {
     }
 
     static func archivePasswordTitle(for language: AppLanguage) -> String {
-        isChinese(language) ? "压缩密码（可选）" : "Archive Password (Optional)"
+        isChinese(language) ? "归档密码（可选）" : "Archive Password (Optional)"
     }
 
     static func archivePasswordPlaceholder(for language: AppLanguage) -> String {
-        isChinese(language) ? "ZIP/7Z 可用，留空则不加密" : "Available for ZIP/7Z, leave empty for no encryption"
+        isChinese(language) ? "用于 ZIP/7Z 压缩或解压，留空表示不使用密码" : "Used for ZIP/7Z compression or extraction. Leave empty for no password."
+    }
+
+    static func copyStatusButton(for language: AppLanguage) -> String {
+        isChinese(language) ? "复制" : "Copy"
     }
 
     static func noOutputFolder(for language: AppLanguage) -> String {
