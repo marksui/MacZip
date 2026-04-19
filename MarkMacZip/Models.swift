@@ -36,6 +36,88 @@ enum AppLanguage: String, CaseIterable, Identifiable {
     }
 }
 
+enum ArchiveFormat: String, CaseIterable, Identifiable {
+    case zip
+    case sevenZ
+    case tar
+    case tarGz
+    case gzip
+
+    var id: String { rawValue }
+
+    var fileExtension: String {
+        switch self {
+        case .zip:
+            return "zip"
+        case .sevenZ:
+            return "7z"
+        case .tar:
+            return "tar"
+        case .tarGz:
+            return "tar.gz"
+        case .gzip:
+            return "gz"
+        }
+    }
+
+    var supportsPassword: Bool {
+        self == .zip || self == .sevenZ
+    }
+
+    func title(for language: AppLanguage) -> String {
+        switch self {
+        case .zip:
+            return "ZIP"
+        case .sevenZ:
+            return "7Z"
+        case .tar:
+            return "TAR"
+        case .tarGz:
+            return "TAR.GZ"
+        case .gzip:
+            return "GZIP"
+        }
+    }
+
+    static func detect(from url: URL) -> ArchiveFormat? {
+        let lowercasedName = url.lastPathComponent.lowercased()
+
+        if lowercasedName.hasSuffix(".tar.gz") || lowercasedName.hasSuffix(".tgz") {
+            return .tarGz
+        }
+
+        if lowercasedName.hasSuffix(".7z") {
+            return .sevenZ
+        }
+
+        if lowercasedName.hasSuffix(".tar") {
+            return .tar
+        }
+
+        if lowercasedName.hasSuffix(".zip") {
+            return .zip
+        }
+
+        if lowercasedName.hasSuffix(".gz") {
+            return .gzip
+        }
+
+        return nil
+    }
+}
+
+enum ProgressVisualState {
+    case idle
+    case running
+    case success
+    case failure
+}
+
+struct ArchiveOperationProgress {
+    let fractionCompleted: Double?
+    let detail: String
+}
+
 enum ArchiveAction: String, Codable {
     case extract
     case compress
@@ -98,11 +180,15 @@ enum AppStrings {
     }
 
     static func dropSubtitle(for language: AppLanguage) -> String {
-        isChinese(language) ? "拖入 .zip 文件可解压，拖入文件或文件夹可创建新压缩包。" : "You can drag a .zip file to extract, or drag files and folders to create a new zip."
+        isChinese(language) ? "支持 ZIP、7Z、TAR、TAR.GZ/TGZ、GZIP。" : "Supports ZIP, 7Z, TAR, TAR.GZ/TGZ, and GZIP."
     }
 
     static func selectedItemsTitle(for language: AppLanguage) -> String {
         isChinese(language) ? "已选择项目" : "Selected Items"
+    }
+
+    static func removeSelectedItem(for language: AppLanguage) -> String {
+        isChinese(language) ? "移除该文件" : "Remove this file"
     }
 
     static func noSelectedItems(for language: AppLanguage) -> String {
@@ -117,12 +203,16 @@ enum AppStrings {
         isChinese(language) ? "输出文件夹" : "Output Folder"
     }
 
-    static func zipPasswordTitle(for language: AppLanguage) -> String {
-        isChinese(language) ? "ZIP 密码（可选）" : "ZIP Password (Optional)"
+    static func archiveFormatTitle(for language: AppLanguage) -> String {
+        isChinese(language) ? "格式" : "Format"
     }
 
-    static func zipPasswordPlaceholder(for language: AppLanguage) -> String {
-        isChinese(language) ? "留空则创建普通 zip" : "Leave empty for normal zip"
+    static func archivePasswordTitle(for language: AppLanguage) -> String {
+        isChinese(language) ? "压缩密码（可选）" : "Archive Password (Optional)"
+    }
+
+    static func archivePasswordPlaceholder(for language: AppLanguage) -> String {
+        isChinese(language) ? "ZIP/7Z 可用，留空则不加密" : "Available for ZIP/7Z, leave empty for no encryption"
     }
 
     static func noOutputFolder(for language: AppLanguage) -> String {
@@ -150,7 +240,7 @@ enum AppStrings {
     }
 
     static func pickerSelectMessage(for language: AppLanguage) -> String {
-        isChinese(language) ? "选择文件、文件夹或 zip 压缩包。" : "Choose files, folders, or zip archives."
+        isChinese(language) ? "选择文件、文件夹或支持的归档文件（ZIP/7Z/TAR/TAR.GZ/TGZ/GZ）。" : "Choose files, folders, or supported archives (ZIP/7Z/TAR/TAR.GZ/TGZ/GZ)."
     }
 
     static func pickerOutputMessage(for language: AppLanguage) -> String {
@@ -169,6 +259,10 @@ enum AppStrings {
         isChinese(language) ? "状态" : "Status"
     }
 
+    static func progressTitle(for language: AppLanguage) -> String {
+        isChinese(language) ? "进度" : "Progress"
+    }
+
     static func idleStatus(for language: AppLanguage) -> String {
         isChinese(language) ? "请选择文件或拖拽文件开始。" : "Choose or drop files to get started."
     }
@@ -185,8 +279,8 @@ enum AppStrings {
         isChinese(language) ? "请先选择输出文件夹。" : "Choose an output folder before continuing."
     }
 
-    static func invalidZipSelection(for language: AppLanguage) -> String {
-        isChinese(language) ? "解压仅支持 .zip 文件。" : "Extraction only works with .zip files."
+    static func invalidArchiveSelection(for language: AppLanguage) -> String {
+        isChinese(language) ? "仅支持 ZIP、7Z、TAR、TAR.GZ/TGZ、GZIP。" : "Only ZIP, 7Z, TAR, TAR.GZ/TGZ, and GZIP are supported."
     }
 
     static func invalidDrop(for language: AppLanguage) -> String {
@@ -202,11 +296,15 @@ enum AppStrings {
     }
 
     static func compressingStatus(for language: AppLanguage) -> String {
-        isChinese(language) ? "正在创建压缩包..." : "Creating zip archive..."
+        isChinese(language) ? "正在创建压缩包..." : "Creating archive..."
+    }
+
+    static func compressingStatus(for language: AppLanguage, format: ArchiveFormat) -> String {
+        isChinese(language) ? "正在创建 \(format.title(for: language))..." : "Creating \(format.title(for: language)) archive..."
     }
 
     static func compressingMultipleStatus(for language: AppLanguage) -> String {
-        isChinese(language) ? "正在从多个项目创建压缩包..." : "Creating zip archive from multiple items..."
+        isChinese(language) ? "正在从多个项目创建压缩包..." : "Creating archive from multiple items..."
     }
 
     static func successSingleExtract(for language: AppLanguage) -> String {
@@ -245,11 +343,27 @@ enum AppStrings {
         isChinese(language) ? "语言" : "Language"
     }
 
+    static func progressCompleted(for language: AppLanguage) -> String {
+        isChinese(language) ? "已完成" : "Completed"
+    }
+
+    static func progressFailed(for language: AppLanguage) -> String {
+        isChinese(language) ? "失败" : "Failed"
+    }
+
     static func historyResult(_ wasSuccessful: Bool, for language: AppLanguage) -> String {
         guard wasSuccessful else {
             return isChinese(language) ? "失败" : "Failed"
         }
         return isChinese(language) ? "成功" : "Success"
+    }
+
+    static func unsupportedGzipInput(for language: AppLanguage) -> String {
+        isChinese(language) ? "GZIP 压缩仅支持单个文件。" : "GZIP compression supports only one file."
+    }
+
+    static func unsupportedSevenZip(for language: AppLanguage) -> String {
+        isChinese(language) ? "未检测到 7z 命令行工具。可安装 p7zip 后重试。" : "7z command-line tool not found. Install p7zip and try again."
     }
 
     private static func isChinese(_ language: AppLanguage) -> Bool {

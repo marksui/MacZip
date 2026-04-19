@@ -10,6 +10,10 @@ final class ContentViewModel: ObservableObject {
     @Published var isWorking = false
     @Published var isDropTargeted = false
     @Published var compressionPassword = ""
+    @Published var selectedCompressionFormat: ArchiveFormat = .zip
+    @Published var progressFraction: Double?
+    @Published var progressDetail = ""
+    @Published var progressVisualState: ProgressVisualState = .idle
 
     private let archiveService: ArchiveService
     private let historyStore: HistoryStore
@@ -20,6 +24,10 @@ final class ContentViewModel: ObservableObject {
         self.historyStore = historyStore
         self.language = language
         self.statusText = AppStrings.idleStatus(for: language)
+    }
+
+    var availableCompressionFormats: [ArchiveFormat] {
+        ArchiveFormat.allCases.filter { archiveService.supportsCompression(format: $0) }
     }
 
     var selectedItemSummary: String {
@@ -38,12 +46,44 @@ final class ContentViewModel: ObservableObject {
         outputFolder?.path ?? AppStrings.noOutputFolder(for: language)
     }
 
+    var shouldShowPasswordField: Bool {
+        selectedCompressionFormat.supportsPassword
+    }
+
     var canExtract: Bool {
-        !isWorking && !selectedItems.isEmpty && selectedItems.allSatisfy { $0.pathExtension.lowercased() == "zip" } && outputFolder != nil
+        guard !isWorking, !selectedItems.isEmpty, outputFolder != nil else {
+            return false
+        }
+
+        return selectedItems.allSatisfy {
+            guard let format = ArchiveFormat.detect(from: $0) else {
+                return false
+            }
+            return archiveService.supportsExtraction(format: format)
+        }
     }
 
     var canCompress: Bool {
-        !isWorking && !selectedItems.isEmpty && outputFolder != nil
+        guard !isWorking, !selectedItems.isEmpty, outputFolder != nil else {
+            return false
+        }
+
+        guard archiveService.supportsCompression(format: selectedCompressionFormat) else {
+            return false
+        }
+
+        if selectedCompressionFormat == .gzip {
+            guard selectedItems.count == 1 else {
+                return false
+            }
+
+            var isDirectory = ObjCBool(false)
+            if FileManager.default.fileExists(atPath: selectedItems[0].path, isDirectory: &isDirectory), isDirectory.boolValue {
+                return false
+            }
+        }
+
+        return true
     }
 
     func updateLanguage(_ language: AppLanguage) {
@@ -69,6 +109,15 @@ final class ContentViewModel: ObservableObject {
         applySelectedItems(selectedItems + urls)
     }
 
+    func removeSelectedItem(_ item: URL) {
+        guard !isWorking else {
+            return
+        }
+
+        selectedItems.removeAll { $0.path == item.path }
+        statusText = selectedItems.isEmpty ? AppStrings.idleStatus(for: language) : AppStrings.selectedStatus(for: language)
+    }
+
     func chooseOutputFolder() {
         if let folder = FilePicker.chooseOutputFolder() {
             outputFolder = folder
@@ -87,18 +136,25 @@ final class ContentViewModel: ObservableObject {
             return
         }
 
-        guard selectedItems.allSatisfy({ $0.pathExtension.lowercased() == "zip" }) else {
-            statusText = AppStrings.invalidZipSelection(for: language)
+        guard selectedItems.allSatisfy({
+            guard let format = ArchiveFormat.detect(from: $0) else { return false }
+            return archiveService.supportsExtraction(format: format)
+        }) else {
+            statusText = AppStrings.invalidArchiveSelection(for: language)
             return
         }
 
-        isWorking = true
-        statusText = selectedItems.count > 1 ? AppStrings.extractingMultipleStatus(for: language) : AppStrings.extractingStatus(for: language)
+        beginOperation(with: selectedItems.count > 1 ? AppStrings.extractingMultipleStatus(for: language) : AppStrings.extractingStatus(for: language))
 
         let archives = selectedItems
-        let archiveService = self.archiveService
+        let service = self.archiveService
+
         DispatchQueue.global(qos: .userInitiated).async {
-            let results = archiveService.extractArchives(archives, to: outputFolder)
+            let results = service.extractArchives(archives, to: outputFolder) { progress in
+                DispatchQueue.main.async { [weak self] in
+                    self?.applyProgress(progress)
+                }
+            }
 
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
@@ -118,16 +174,43 @@ final class ContentViewModel: ObservableObject {
             return
         }
 
-        isWorking = true
-        statusText = selectedItems.count > 1 ? AppStrings.compressingMultipleStatus(for: language) : AppStrings.compressingStatus(for: language)
+        if selectedCompressionFormat == .gzip {
+            guard selectedItems.count == 1 else {
+                statusText = AppStrings.unsupportedGzipInput(for: language)
+                return
+            }
+
+            var isDirectory = ObjCBool(false)
+            if FileManager.default.fileExists(atPath: selectedItems[0].path, isDirectory: &isDirectory), isDirectory.boolValue {
+                statusText = AppStrings.unsupportedGzipInput(for: language)
+                return
+            }
+        }
+
+        guard archiveService.supportsCompression(format: selectedCompressionFormat) else {
+            statusText = AppStrings.unsupportedSevenZip(for: language)
+            return
+        }
+
+        beginOperation(with: AppStrings.compressingStatus(for: language, format: selectedCompressionFormat))
 
         let items = selectedItems
-        let archiveService = self.archiveService
+        let service = self.archiveService
+        let format = selectedCompressionFormat
         let normalizedPassword = compressionPassword.trimmingCharacters(in: .whitespacesAndNewlines)
-        let encryptionPassword = normalizedPassword.isEmpty ? nil : normalizedPassword
+        let encryptionPassword = format.supportsPassword && !normalizedPassword.isEmpty ? normalizedPassword : nil
 
         DispatchQueue.global(qos: .userInitiated).async {
-            let results = archiveService.compressItems(items, to: outputFolder, password: encryptionPassword)
+            let results = service.compressItems(
+                items,
+                to: outputFolder,
+                format: format,
+                password: encryptionPassword
+            ) { progress in
+                DispatchQueue.main.async { [weak self] in
+                    self?.applyProgress(progress)
+                }
+            }
 
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
@@ -181,6 +264,35 @@ final class ContentViewModel: ObservableObject {
         return true
     }
 
+    func progressStateText(for language: AppLanguage) -> String {
+        switch progressVisualState {
+        case .idle:
+            return ""
+        case .running:
+            return progressDetail
+        case .success:
+            return AppStrings.progressCompleted(for: language)
+        case .failure:
+            return AppStrings.progressFailed(for: language)
+        }
+    }
+
+    private func beginOperation(with message: String) {
+        isWorking = true
+        statusText = message
+        progressDetail = message
+        progressFraction = 0
+        progressVisualState = .running
+    }
+
+    private func applyProgress(_ progress: ArchiveOperationProgress) {
+        progressFraction = progress.fractionCompleted
+
+        if !progress.detail.isEmpty {
+            progressDetail = progress.detail
+        }
+    }
+
     private func applySelectedItems(_ urls: [URL]) {
         let cleanedItems = uniqueExistingURLs(from: urls)
 
@@ -191,6 +303,9 @@ final class ContentViewModel: ObservableObject {
 
         selectedItems = cleanedItems
         statusText = AppStrings.selectedStatus(for: language)
+        progressVisualState = .idle
+        progressFraction = nil
+        progressDetail = ""
     }
 
     private func uniqueExistingURLs(from urls: [URL]) -> [URL] {
@@ -229,6 +344,9 @@ final class ContentViewModel: ObservableObject {
         let successCount = results.filter(\.isSuccess).count
 
         if successCount == results.count {
+            progressVisualState = .success
+            progressFraction = 1
+
             if results.first?.action == .extract {
                 statusText = results.count == 1 ? AppStrings.successSingleExtract(for: language) : AppStrings.finishedExtracting(results.count, for: language)
             } else {
@@ -236,6 +354,8 @@ final class ContentViewModel: ObservableObject {
             }
             return
         }
+
+        progressVisualState = .failure
 
         if successCount > 0 {
             statusText = AppStrings.partialSuccess(for: language)
@@ -298,6 +418,7 @@ struct ContentView: View {
                 dropArea
                 selectedItemsCard
                 controls
+                progressCard
                 statusCard
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -369,7 +490,8 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 12) {
                 ForEach(viewModel.selectedItems, id: \.path) { item in
                     HStack(spacing: 10) {
-                        Image(systemName: item.pathExtension.lowercased() == "zip" ? "doc.zipper" : "folder")
+                        let isArchive = ArchiveFormat.detect(from: item) != nil
+                        Image(systemName: isArchive ? "doc.zipper" : "folder")
                             .foregroundColor(Color.accentColor)
 
                         VStack(alignment: .leading, spacing: 2) {
@@ -381,6 +503,18 @@ struct ContentView: View {
                                 .foregroundColor(.secondary)
                                 .lineLimit(1)
                         }
+
+                        Spacer(minLength: 8)
+
+                        Button {
+                            viewModel.removeSelectedItem(item)
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.borderless)
+                        .help(AppStrings.removeSelectedItem(for: selectedLanguage))
+                        .disabled(viewModel.isWorking)
                     }
                 }
 
@@ -423,16 +557,31 @@ struct ContentView: View {
                 .disabled(!viewModel.canCompress)
             }
 
-            settingsCard
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text(AppStrings.zipPasswordTitle(for: selectedLanguage))
+            HStack(spacing: 12) {
+                Text(AppStrings.archiveFormatTitle(for: selectedLanguage))
                     .font(.headline)
 
-                SecureField(AppStrings.zipPasswordPlaceholder(for: selectedLanguage), text: $viewModel.compressionPassword)
-                    .textFieldStyle(.roundedBorder)
-                    .disabled(viewModel.isWorking)
+                Picker(AppStrings.archiveFormatTitle(for: selectedLanguage), selection: $viewModel.selectedCompressionFormat) {
+                    ForEach(viewModel.availableCompressionFormats) { format in
+                        Text(format.title(for: selectedLanguage)).tag(format)
+                    }
+                }
+                .pickerStyle(MenuPickerStyle())
+                .frame(maxWidth: 220)
             }
+
+            if viewModel.shouldShowPasswordField {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(AppStrings.archivePasswordTitle(for: selectedLanguage))
+                        .font(.headline)
+
+                    SecureField(AppStrings.archivePasswordPlaceholder(for: selectedLanguage), text: $viewModel.compressionPassword)
+                        .textFieldStyle(.roundedBorder)
+                        .disabled(viewModel.isWorking)
+                }
+            }
+
+            settingsCard
 
             HStack(spacing: 10) {
                 Image(systemName: "folder")
@@ -448,11 +597,54 @@ struct ContentView: View {
                         .lineLimit(2)
                 }
             }
+        }
+    }
 
-            if viewModel.isWorking {
-                ProgressView()
-                    .controlSize(.small)
+    private var progressCard: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 8) {
+                if viewModel.isWorking {
+                    if let fraction = viewModel.progressFraction {
+                        ProgressView(value: fraction)
+                            .controlSize(.small)
+                    } else {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                } else if viewModel.progressVisualState != .idle {
+                    ProgressView(value: 1)
+                        .controlSize(.small)
+                }
+
+                let stateText = viewModel.progressStateText(for: selectedLanguage)
+                if !stateText.isEmpty {
+                    Text(stateText)
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(progressStateColor)
+                }
+
+                if !viewModel.progressDetail.isEmpty {
+                    Text(viewModel.progressDetail)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } label: {
+            Text(AppStrings.progressTitle(for: selectedLanguage))
+                .font(.headline)
+        }
+    }
+
+    private var progressStateColor: Color {
+        switch viewModel.progressVisualState {
+        case .success:
+            return .green
+        case .failure:
+            return .red
+        default:
+            return .secondary
         }
     }
 
