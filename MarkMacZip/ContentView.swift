@@ -20,6 +20,7 @@ final class ContentViewModel: ObservableObject {
     private let archiveService: ArchiveService
     private let historyStore: HistoryStore
     private var language: AppLanguage
+    private var hasManuallyChosenOutputFolder = false
 
     init(archiveService: ArchiveService, historyStore: HistoryStore, language: AppLanguage) {
         self.archiveService = archiveService
@@ -122,6 +123,7 @@ final class ContentViewModel: ObservableObject {
 
     func chooseOutputFolder() {
         if let folder = FilePicker.chooseOutputFolder() {
+            hasManuallyChosenOutputFolder = true
             outputFolder = folder
             statusText = AppStrings.outputFolderReady(folder.lastPathComponent, for: language)
         }
@@ -314,10 +316,26 @@ final class ContentViewModel: ObservableObject {
         }
 
         selectedItems = cleanedItems
+        if !hasManuallyChosenOutputFolder || outputFolder == nil {
+            outputFolder = suggestedOutputFolder(from: cleanedItems.last)
+        }
         statusText = AppStrings.selectedStatus(for: language)
         progressVisualState = .idle
         progressFraction = nil
         progressDetail = ""
+    }
+
+    private func suggestedOutputFolder(from url: URL?) -> URL? {
+        guard let url else {
+            return nil
+        }
+
+        var isDirectory = ObjCBool(false)
+        if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue {
+            return url
+        }
+
+        return url.deletingLastPathComponent()
     }
 
     private func uniqueExistingURLs(from urls: [URL]) -> [URL] {
@@ -636,6 +654,7 @@ struct ContentView: View {
                         .foregroundColor(.secondary)
                 }
             }
+            .padding(.trailing, 12)
             .frame(maxWidth: .infinity, alignment: .leading)
         } label: {
             Text(AppStrings.selectedItemsTitle(for: selectedLanguage))
@@ -672,6 +691,21 @@ struct ContentView: View {
                 .disabled(!viewModel.canCompress)
             }
 
+            HStack(spacing: 10) {
+                Image(systemName: "folder")
+                    .foregroundColor(.secondary)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(AppStrings.outputFolderTitle(for: selectedLanguage))
+                        .font(.headline)
+
+                    Text(viewModel.outputFolderPath)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                }
+            }
+
             HStack(spacing: 12) {
                 Text(AppStrings.archiveFormatTitle(for: selectedLanguage))
                     .font(.headline)
@@ -702,21 +736,6 @@ struct ContentView: View {
                     SecureField(AppStrings.archivePasswordPlaceholder(for: selectedLanguage), text: $viewModel.compressionPassword)
                         .textFieldStyle(.roundedBorder)
                         .disabled(viewModel.isWorking)
-                }
-            }
-
-            HStack(spacing: 10) {
-                Image(systemName: "folder")
-                    .foregroundColor(.secondary)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(AppStrings.outputFolderTitle(for: selectedLanguage))
-                        .font(.headline)
-
-                    Text(viewModel.outputFolderPath)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(2)
                 }
             }
         }
