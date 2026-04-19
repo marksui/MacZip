@@ -11,6 +11,7 @@ final class ContentViewModel: ObservableObject {
     @Published var isDropTargeted = false
     @Published var compressionPassword = ""
     @Published var selectedCompressionFormat: ArchiveFormat = .zip
+    @Published var outputArchiveName = AppStrings.defaultArchiveName
     @Published var progressFraction: Double?
     @Published var progressDetail = ""
     @Published var progressVisualState: ProgressVisualState = .idle
@@ -197,6 +198,7 @@ final class ContentViewModel: ObservableObject {
         let items = selectedItems
         let service = self.archiveService
         let format = selectedCompressionFormat
+        let archiveBaseName = outputArchiveName
         let normalizedPassword = compressionPassword.trimmingCharacters(in: .whitespacesAndNewlines)
         let encryptionPassword = format.supportsPassword && !normalizedPassword.isEmpty ? normalizedPassword : nil
 
@@ -205,6 +207,7 @@ final class ContentViewModel: ObservableObject {
                 items,
                 to: outputFolder,
                 format: format,
+                archiveBaseName: archiveBaseName,
                 password: encryptionPassword
             ) { progress in
                 DispatchQueue.main.async { [weak self] in
@@ -370,7 +373,9 @@ struct ContentView: View {
     @ObservedObject private var historyStore: HistoryStore
     @Binding private var appThemeRawValue: String
     @Binding private var appLanguageRawValue: String
+    @Binding private var appFontScale: Double
     @StateObject private var viewModel: ContentViewModel
+    @State private var isSettingsPopoverPresented = false
 
     private var selectedTheme: AppTheme {
         get { AppTheme(rawValue: appThemeRawValue) ?? .light }
@@ -396,10 +401,23 @@ struct ContentView: View {
         )
     }
 
-    init(historyStore: HistoryStore, appThemeRawValue: Binding<String>, appLanguageRawValue: Binding<String>) {
+    private var fontScaleBinding: Binding<Double> {
+        Binding(
+            get: { appFontScale },
+            set: { appFontScale = min(max($0, 0.85), 1.35) }
+        )
+    }
+
+    init(
+        historyStore: HistoryStore,
+        appThemeRawValue: Binding<String>,
+        appLanguageRawValue: Binding<String>,
+        appFontScale: Binding<Double>
+    ) {
         self.historyStore = historyStore
         _appThemeRawValue = appThemeRawValue
         _appLanguageRawValue = appLanguageRawValue
+        _appFontScale = appFontScale
 
         let initialLanguage = AppLanguage(rawValue: appLanguageRawValue.wrappedValue) ?? .simplifiedChinese
         _viewModel = StateObject(
@@ -427,7 +445,8 @@ struct ContentView: View {
                 .frame(width: 270)
         }
         .padding(24)
-        .frame(minWidth: 980, minHeight: 640)
+        .scaleEffect(CGFloat(appFontScale), anchor: .topLeading)
+        .frame(minWidth: 980 * CGFloat(appFontScale), minHeight: 640 * CGFloat(appFontScale))
         .background(Color(NSColor.windowBackgroundColor))
         .onAppear {
             viewModel.updateLanguage(selectedLanguage)
@@ -438,13 +457,26 @@ struct ContentView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(AppStrings.appTitle)
-                .font(.system(size: 30, weight: .bold))
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(AppStrings.appTitle)
+                    .font(.system(size: 30, weight: .bold))
 
-            Text(AppStrings.subtitle(for: selectedLanguage))
-                .font(.title3)
-                .foregroundColor(.secondary)
+                Text(AppStrings.subtitle(for: selectedLanguage))
+                    .font(.title3)
+                    .foregroundColor(.secondary)
+            }
+
+            Spacer()
+
+            Button {
+                isSettingsPopoverPresented = true
+            } label: {
+                Label(AppStrings.settingsButton(for: selectedLanguage), systemImage: "gearshape.fill")
+            }
+            .popover(isPresented: $isSettingsPopoverPresented, arrowEdge: .top) {
+                settingsPopover
+            }
         }
     }
 
@@ -570,6 +602,15 @@ struct ContentView: View {
                 .frame(maxWidth: 220)
             }
 
+            VStack(alignment: .leading, spacing: 8) {
+                Text(AppStrings.archiveNameTitle(for: selectedLanguage))
+                    .font(.headline)
+
+                TextField(AppStrings.archiveNamePlaceholder(for: selectedLanguage), text: $viewModel.outputArchiveName)
+                    .textFieldStyle(.roundedBorder)
+                    .disabled(viewModel.isWorking)
+            }
+
             if viewModel.shouldShowPasswordField {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(AppStrings.archivePasswordTitle(for: selectedLanguage))
@@ -580,8 +621,6 @@ struct ContentView: View {
                         .disabled(viewModel.isWorking)
                 }
             }
-
-            settingsCard
 
             HStack(spacing: 10) {
                 Image(systemName: "folder")
@@ -648,42 +687,51 @@ struct ContentView: View {
         }
     }
 
-    private var settingsCard: some View {
-        GroupBox {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 12) {
-                    Text(AppStrings.themeTitle(for: selectedLanguage))
-                        .frame(width: 60, alignment: .leading)
-
-                    Picker(AppStrings.themeTitle(for: selectedLanguage), selection: themeBinding) {
-                        ForEach(AppTheme.allCases) { theme in
-                            Text(theme.title(for: selectedLanguage)).tag(theme)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    .frame(maxWidth: 260)
-                }
-
-                HStack(spacing: 12) {
-                    Text(AppStrings.languageTitle(for: selectedLanguage))
-                        .frame(width: 60, alignment: .leading)
-
-                    Picker(AppStrings.languageTitle(for: selectedLanguage), selection: languageBinding) {
-                        ForEach(AppLanguage.allCases) { language in
-                            Text(language.displayName).tag(language)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    .frame(maxWidth: 260)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        } label: {
+    private var settingsPopover: some View {
+        VStack(alignment: .leading, spacing: 12) {
             Text(AppStrings.settingsTitle(for: selectedLanguage))
                 .font(.headline)
+
+            HStack(spacing: 12) {
+                Text(AppStrings.themeTitle(for: selectedLanguage))
+                    .frame(width: 72, alignment: .leading)
+
+                Picker(AppStrings.themeTitle(for: selectedLanguage), selection: themeBinding) {
+                    ForEach(AppTheme.allCases) { theme in
+                        Text(theme.title(for: selectedLanguage)).tag(theme)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 250)
+            }
+
+            HStack(spacing: 12) {
+                Text(AppStrings.languageTitle(for: selectedLanguage))
+                    .frame(width: 72, alignment: .leading)
+
+                Picker(AppStrings.languageTitle(for: selectedLanguage), selection: languageBinding) {
+                    ForEach(AppLanguage.allCases) { language in
+                        Text(language.displayName).tag(language)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 250)
+            }
+
+            HStack(spacing: 12) {
+                Text(AppStrings.fontSizeTitle(for: selectedLanguage))
+                    .frame(width: 72, alignment: .leading)
+
+                Slider(value: fontScaleBinding, in: 0.85 ... 1.35, step: 0.05)
+                    .frame(width: 170)
+
+                Text("\(Int(appFontScale * 100))%")
+                    .foregroundColor(.secondary)
+                    .frame(width: 42, alignment: .trailing)
+            }
         }
+        .padding(14)
+        .frame(width: 370)
     }
 
     private var statusCard: some View {
@@ -718,6 +766,15 @@ struct ContentView: View {
                                     Text(AppStrings.historyResult(item.wasSuccessful, for: selectedLanguage))
                                         .font(.caption.weight(.semibold))
                                         .foregroundColor(item.wasSuccessful ? .green : .red)
+
+                                    Button {
+                                        historyStore.remove(item.id)
+                                    } label: {
+                                        Image(systemName: "trash")
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .buttonStyle(.borderless)
+                                    .help(AppStrings.removeHistoryItem(for: selectedLanguage))
                                 }
 
                                 Text(item.action.title(for: selectedLanguage))

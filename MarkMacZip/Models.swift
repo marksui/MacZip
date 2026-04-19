@@ -170,6 +170,7 @@ struct ArchiveOperationResult {
 
 enum AppStrings {
     static let appTitle = "MarkMacZip"
+    static let defaultArchiveName = "Archive"
 
     static func subtitle(for language: AppLanguage) -> String {
         isChinese(language) ? "用简单友好的方式压缩与解压文件。" : "Zip and unzip files with a simple, friendly workflow."
@@ -205,6 +206,14 @@ enum AppStrings {
 
     static func archiveFormatTitle(for language: AppLanguage) -> String {
         isChinese(language) ? "格式" : "Format"
+    }
+
+    static func archiveNameTitle(for language: AppLanguage) -> String {
+        isChinese(language) ? "压缩文件名" : "Archive Name"
+    }
+
+    static func archiveNamePlaceholder(for language: AppLanguage) -> String {
+        isChinese(language) ? "默认 Archive" : "Default: Archive"
     }
 
     static func archivePasswordTitle(for language: AppLanguage) -> String {
@@ -335,12 +344,20 @@ enum AppStrings {
         isChinese(language) ? "设置" : "Settings"
     }
 
+    static func settingsButton(for language: AppLanguage) -> String {
+        isChinese(language) ? "设置" : "Settings"
+    }
+
     static func themeTitle(for language: AppLanguage) -> String {
         isChinese(language) ? "主题" : "Theme"
     }
 
     static func languageTitle(for language: AppLanguage) -> String {
         isChinese(language) ? "语言" : "Language"
+    }
+
+    static func fontSizeTitle(for language: AppLanguage) -> String {
+        isChinese(language) ? "字体大小" : "Font Size"
     }
 
     static func progressCompleted(for language: AppLanguage) -> String {
@@ -356,6 +373,10 @@ enum AppStrings {
             return isChinese(language) ? "失败" : "Failed"
         }
         return isChinese(language) ? "成功" : "Success"
+    }
+
+    static func removeHistoryItem(for language: AppLanguage) -> String {
+        isChinese(language) ? "删除这条记录" : "Delete this activity"
     }
 
     static func unsupportedGzipInput(for language: AppLanguage) -> String {

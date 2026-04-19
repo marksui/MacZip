@@ -12,4 +12,8 @@ final class HistoryStore: ObservableObject {
             items.removeLast(items.count - maxItems)
         }
     }
+
+    func remove(_ itemID: UUID) {
+        items.removeAll { $0.id == itemID }
+    }
 }

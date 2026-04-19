@@ -114,6 +114,7 @@ struct ArchiveService {
         _ itemURLs: [URL],
         to outputFolder: URL,
         format: ArchiveFormat,
+        archiveBaseName: String? = nil,
         password: String? = nil,
         progressHandler: ((ArchiveOperationProgress) -> Void)? = nil
     ) -> [ArchiveOperationResult] {
@@ -131,6 +132,7 @@ struct ArchiveService {
                 itemURLs,
                 to: outputFolder,
                 format: format,
+                archiveBaseName: archiveBaseName,
                 password: encryptionPassword,
                 progressHandler: progressHandler
             )
@@ -190,6 +192,7 @@ struct ArchiveService {
         _ itemURLs: [URL],
         to outputFolder: URL,
         format: ArchiveFormat,
+        archiveBaseName: String?,
         password: String?,
         progressHandler: ((ArchiveOperationProgress) -> Void)?
     ) throws -> ArchiveOperationResult {
@@ -198,7 +201,7 @@ struct ArchiveService {
         }
 
         let parentFolder = commonParentFolder(for: itemURLs)
-        let archiveName = suggestedArchiveName(for: itemURLs)
+        let archiveName = normalizedArchiveBaseName(archiveBaseName) ?? "Archive"
         let destinationURL = uniqueDestination(
             in: outputFolder,
             baseName: archiveName,
@@ -540,12 +543,19 @@ struct ArchiveService {
         }
     }
 
-    private func suggestedArchiveName(for itemURLs: [URL]) -> String {
-        if itemURLs.count == 1 {
-            return itemURLs[0].lastPathComponent
+    private func normalizedArchiveBaseName(_ input: String?) -> String? {
+        guard let input else {
+            return nil
         }
 
-        return "Archive"
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return nil
+        }
+
+        let invalidCharacterSet = CharacterSet(charactersIn: "/\\:")
+        let sanitized = trimmed.components(separatedBy: invalidCharacterSet).joined(separator: "_")
+        return sanitized.isEmpty ? nil : sanitized
     }
 
     private func commonParentFolder(for urls: [URL]) -> URL {
