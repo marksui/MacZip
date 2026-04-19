@@ -187,6 +187,7 @@ struct ArchiveOperationResult {
 enum AppStrings {
     static let appTitle = "MarkMacZip"
     static let defaultArchiveName = "Archive"
+    static let appVersion = "v1.2.3"
 
     static func subtitle(for language: AppLanguage) -> String {
         isChinese(language) ? "用简单友好的方式压缩与解压文件。" : "Zip and unzip files with a simple, friendly workflow."
@@ -366,6 +367,21 @@ enum AppStrings {
 
     static func settingsButton(for language: AppLanguage) -> String {
         isChinese(language) ? "设置" : "Settings"
+    }
+
+    static func aboutButton(for language: AppLanguage) -> String {
+        isChinese(language) ? "关于" : "About"
+    }
+
+    static func aboutTitle(for language: AppLanguage) -> String {
+        isChinese(language) ? "创作背景" : "Background"
+    }
+
+    static func aboutBody(for language: AppLanguage) -> String {
+        if isChinese(language) {
+            return "MarkMacZip 由 Mark Sui 创作，来自 UCSD。项目目标是提供一个轻量、简洁、本地优先的 macOS 压缩与解压工具。"
+        }
+        return "MarkMacZip is created by Mark Sui from UCSD. The goal is a lightweight, clean, local-first macOS archive utility."
     }
 
     static func themeTitle(for language: AppLanguage) -> String {

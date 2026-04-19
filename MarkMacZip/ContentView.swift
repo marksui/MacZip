@@ -477,6 +477,7 @@ struct ContentView: View {
     @Binding private var appFontScale: Double
     @StateObject private var viewModel: ContentViewModel
     @State private var isSettingsPopoverPresented = false
+    @State private var isAboutPopoverPresented = false
 
     private var selectedTheme: AppTheme {
         get { AppTheme(rawValue: appThemeRawValue) ?? .light }
@@ -566,13 +567,31 @@ struct ContentView: View {
 
             Spacer()
 
-            Button {
-                isSettingsPopoverPresented = true
-            } label: {
-                Label(AppStrings.settingsButton(for: selectedLanguage), systemImage: "gearshape.fill")
-            }
-            .popover(isPresented: $isSettingsPopoverPresented, arrowEdge: .top) {
-                settingsPopover
+            HStack(spacing: 8) {
+                Text(AppStrings.appVersion)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
+                Button {
+                    isAboutPopoverPresented = true
+                } label: {
+                    Text("?")
+                        .font(.headline.weight(.bold))
+                        .frame(width: 24, height: 24)
+                }
+                .buttonStyle(.bordered)
+                .popover(isPresented: $isAboutPopoverPresented, arrowEdge: .top) {
+                    aboutPopover
+                }
+
+                Button {
+                    isSettingsPopoverPresented = true
+                } label: {
+                    Label(AppStrings.settingsButton(for: selectedLanguage), systemImage: "gearshape.fill")
+                }
+                .popover(isPresented: $isSettingsPopoverPresented, arrowEdge: .top) {
+                    settingsPopover
+                }
             }
         }
     }
@@ -807,6 +826,7 @@ struct ContentView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                .labelsHidden()
                 .frame(maxWidth: 250)
             }
 
@@ -820,6 +840,7 @@ struct ContentView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                .labelsHidden()
                 .frame(maxWidth: 250)
             }
 
@@ -852,6 +873,24 @@ struct ContentView: View {
         }
         .padding(14)
         .frame(width: 370)
+    }
+
+    private var aboutPopover: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(AppStrings.aboutTitle(for: selectedLanguage))
+                .font(.headline)
+
+            Text(AppStrings.aboutBody(for: selectedLanguage))
+                .font(.body)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(AppStrings.appVersion)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding(14)
+        .frame(width: 320)
     }
 
     private var statusCard: some View {
