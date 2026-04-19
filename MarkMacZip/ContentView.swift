@@ -1,6 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import AppKit
+import Darwin
 
 @MainActor
 final class ContentViewModel: ObservableObject {
@@ -151,15 +152,19 @@ final class ContentViewModel: ObservableObject {
         let service = self.archiveService
 
         DispatchQueue.global(qos: .userInitiated).async {
+            let startSnapshot = Self.captureResourceUsageSnapshot()
             let results = service.extractArchives(archives, to: outputFolder) { progress in
                 DispatchQueue.main.async { [weak self] in
                     self?.applyProgress(progress)
                 }
             }
+            let endSnapshot = Self.captureResourceUsageSnapshot()
+            let elapsed = max(endSnapshot.timestamp.timeIntervalSince(startSnapshot.timestamp), 0.001)
+            let cpuUsagePercent = max(((endSnapshot.totalCPUSeconds - startSnapshot.totalCPUSeconds) / elapsed) * 100, 0)
 
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
-                self.finishOperation(results)
+                self.finishOperation(results, elapsed: elapsed, cpuUsagePercent: cpuUsagePercent)
             }
         }
     }
@@ -203,6 +208,7 @@ final class ContentViewModel: ObservableObject {
         let encryptionPassword = format.supportsPassword && !normalizedPassword.isEmpty ? normalizedPassword : nil
 
         DispatchQueue.global(qos: .userInitiated).async {
+            let startSnapshot = Self.captureResourceUsageSnapshot()
             let results = service.compressItems(
                 items,
                 to: outputFolder,
@@ -214,10 +220,13 @@ final class ContentViewModel: ObservableObject {
                     self?.applyProgress(progress)
                 }
             }
+            let endSnapshot = Self.captureResourceUsageSnapshot()
+            let elapsed = max(endSnapshot.timestamp.timeIntervalSince(startSnapshot.timestamp), 0.001)
+            let cpuUsagePercent = max(((endSnapshot.totalCPUSeconds - startSnapshot.totalCPUSeconds) / elapsed) * 100, 0)
 
             DispatchQueue.main.async { [weak self] in
                 guard let self else { return }
-                self.finishOperation(results)
+                self.finishOperation(results, elapsed: elapsed, cpuUsagePercent: cpuUsagePercent)
             }
         }
     }
@@ -329,17 +338,19 @@ final class ContentViewModel: ObservableObject {
         }
     }
 
-    private func finishOperation(_ results: [ArchiveOperationResult]) {
+    private func finishOperation(_ results: [ArchiveOperationResult], elapsed: TimeInterval, cpuUsagePercent: Double) {
         isWorking = false
 
         for result in results {
+            let metrics = metricsForResult(result, elapsed: elapsed, cpuUsagePercent: cpuUsagePercent)
             historyStore.record(
                 HistoryItem(
                     fileName: result.sourceURL.lastPathComponent,
                     action: result.action,
                     outputLocation: result.destinationURL?.path ?? outputFolder?.path ?? "",
                     wasSuccessful: result.isSuccess,
-                    detail: result.message
+                    detail: result.message,
+                    metrics: metrics
                 )
             )
         }
@@ -366,6 +377,80 @@ final class ContentViewModel: ObservableObject {
         }
 
         statusText = results.first?.message ?? AppStrings.failureSummary(for: language)
+    }
+
+    private func metricsForResult(_ result: ArchiveOperationResult, elapsed: TimeInterval, cpuUsagePercent: Double) -> OperationMetrics? {
+        let inputBytes: Int64
+        switch result.action {
+        case .extract:
+            inputBytes = fileSize(at: result.sourceURL)
+        case .compress:
+            inputBytes = selectedItems.reduce(0) { $0 + fileSize(at: $1) }
+        }
+
+        let outputBytes = fileSize(at: result.destinationURL)
+        guard inputBytes > 0 else {
+            return nil
+        }
+
+        let throughputMBps = (Double(inputBytes) / 1_048_576.0) / max(elapsed, 0.001)
+        return OperationMetrics(
+            latencySeconds: elapsed,
+            throughputMBps: throughputMBps,
+            cpuUsagePercent: cpuUsagePercent,
+            inputBytes: inputBytes,
+            outputBytes: outputBytes
+        )
+    }
+
+    private func fileSize(at url: URL?) -> Int64 {
+        guard let url else {
+            return 0
+        }
+
+        var isDirectory = ObjCBool(false)
+        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) else {
+            return 0
+        }
+
+        if !isDirectory.boolValue {
+            return (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize).map { Int64($0) } ?? 0
+        }
+
+        let resourceKeys: Set<URLResourceKey> = [.isRegularFileKey, .fileSizeKey]
+        let enumerator = FileManager.default.enumerator(
+            at: url,
+            includingPropertiesForKeys: Array(resourceKeys),
+            options: [.skipsHiddenFiles]
+        )
+
+        var totalSize: Int64 = 0
+        while let itemURL = enumerator?.nextObject() as? URL {
+            guard let values = try? itemURL.resourceValues(forKeys: resourceKeys), values.isRegularFile == true else {
+                continue
+            }
+            totalSize += Int64(values.fileSize ?? 0)
+        }
+
+        return totalSize
+    }
+
+    private nonisolated struct ResourceUsageSnapshot {
+        let timestamp: Date
+        let totalCPUSeconds: Double
+    }
+
+    private nonisolated static func captureResourceUsageSnapshot() -> ResourceUsageSnapshot {
+        var usage = rusage()
+        getrusage(RUSAGE_SELF, &usage)
+
+        let userSeconds = Double(usage.ru_utime.tv_sec) + Double(usage.ru_utime.tv_usec) / 1_000_000
+        let systemSeconds = Double(usage.ru_stime.tv_sec) + Double(usage.ru_stime.tv_usec) / 1_000_000
+
+        return ResourceUsageSnapshot(
+            timestamp: Date(),
+            totalCPUSeconds: userSeconds + systemSeconds
+        )
     }
 }
 
@@ -685,6 +770,13 @@ struct ContentView: View {
         }
     }
 
+    private func formattedByteCount(_ bytes: Int64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useKB, .useMB, .useGB]
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: bytes)
+    }
+
     private var settingsPopover: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(AppStrings.settingsTitle(for: selectedLanguage))
@@ -802,6 +894,17 @@ struct ContentView: View {
                                 Text(item.detail)
                                     .font(.caption)
                                     .foregroundColor(.secondary)
+
+                                if let metrics = item.metrics {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("\(AppStrings.latencyTitle(for: selectedLanguage)): \(String(format: "%.2fs", metrics.latencySeconds))")
+                                        Text("\(AppStrings.throughputTitle(for: selectedLanguage)): \(String(format: "%.2f MB/s", metrics.throughputMBps))")
+                                        Text("\(AppStrings.cpuUsageTitle(for: selectedLanguage)): \(String(format: "%.0f%%", metrics.cpuUsagePercent))")
+                                        Text("\(AppStrings.compressionRatioTitle(for: selectedLanguage)): \(String(format: "%.2f", metrics.compressionRatio)) (\(formattedByteCount(metrics.inputBytes)) -> \(formattedByteCount(metrics.outputBytes)))")
+                                    }
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                                }
                             }
                             .padding(12)
                             .frame(maxWidth: .infinity, alignment: .leading)

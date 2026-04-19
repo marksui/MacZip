@@ -140,6 +140,7 @@ struct HistoryItem: Identifiable, Codable {
     let wasSuccessful: Bool
     let detail: String
     let timestamp: Date
+    let metrics: OperationMetrics?
 
     init(
         id: UUID = UUID(),
@@ -148,7 +149,8 @@ struct HistoryItem: Identifiable, Codable {
         outputLocation: String,
         wasSuccessful: Bool,
         detail: String,
-        timestamp: Date = Date()
+        timestamp: Date = Date(),
+        metrics: OperationMetrics? = nil
     ) {
         self.id = id
         self.fileName = fileName
@@ -157,6 +159,20 @@ struct HistoryItem: Identifiable, Codable {
         self.wasSuccessful = wasSuccessful
         self.detail = detail
         self.timestamp = timestamp
+        self.metrics = metrics
+    }
+}
+
+struct OperationMetrics: Codable {
+    let latencySeconds: Double
+    let throughputMBps: Double
+    let cpuUsagePercent: Double
+    let inputBytes: Int64
+    let outputBytes: Int64
+
+    var compressionRatio: Double {
+        guard inputBytes > 0 else { return 0 }
+        return Double(outputBytes) / Double(inputBytes)
     }
 }
 
@@ -366,6 +382,22 @@ enum AppStrings {
 
     static func progressFailed(for language: AppLanguage) -> String {
         isChinese(language) ? "失败" : "Failed"
+    }
+
+    static func latencyTitle(for language: AppLanguage) -> String {
+        isChinese(language) ? "耗时" : "Latency"
+    }
+
+    static func throughputTitle(for language: AppLanguage) -> String {
+        isChinese(language) ? "吞吐量" : "Throughput"
+    }
+
+    static func cpuUsageTitle(for language: AppLanguage) -> String {
+        isChinese(language) ? "CPU 使用率" : "CPU Usage"
+    }
+
+    static func compressionRatioTitle(for language: AppLanguage) -> String {
+        isChinese(language) ? "压缩比" : "Compression Ratio"
     }
 
     static func historyResult(_ wasSuccessful: Bool, for language: AppLanguage) -> String {
