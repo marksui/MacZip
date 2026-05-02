@@ -1,1 +1,8 @@
 .DS_Store
+*.xcuserstate
+xcuserdata/
+.swiftpm/
+.build/
+dist/
+*.dmg
+ChatGPT Image*.png

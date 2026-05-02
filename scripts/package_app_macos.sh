@@ -2,9 +2,12 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+VERSION="1.1.0"
 BUILD_DIR="$ROOT_DIR/.build/release"
 DIST_DIR="$ROOT_DIR/dist"
 APP_DIR="$DIST_DIR/MarkMacZip.app"
+DMG_STAGING_DIR="$DIST_DIR/dmg-root"
+DMG_PATH="$DIST_DIR/MarkMacZip-v$VERSION.dmg"
 EXECUTABLE_NAME="MyArchiveGUI"
 EXECUTABLE_PATH="$BUILD_DIR/$EXECUTABLE_NAME"
 ICON_PATH="$ROOT_DIR/Resources/MarkMacZip.icns"
@@ -80,7 +83,7 @@ cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>1.0.0</string>
+  <string>1.1.0</string>
   <key>CFBundleVersion</key>
   <string>1</string>
   <key>LSMinimumSystemVersion</key>
@@ -116,4 +119,19 @@ if command -v codesign >/dev/null 2>&1; then
   codesign --force --deep --sign - "$APP_DIR"
 fi
 
+rm -rf "$DMG_STAGING_DIR" "$DMG_PATH"
+mkdir -p "$DMG_STAGING_DIR"
+cp -R "$APP_DIR" "$DMG_STAGING_DIR/MarkMacZip.app"
+ln -s /Applications "$DMG_STAGING_DIR/Applications"
+
+hdiutil create \
+  -volname "MarkMacZip" \
+  -srcfolder "$DMG_STAGING_DIR" \
+  -ov \
+  -format UDZO \
+  "$DMG_PATH"
+
+rm -rf "$DMG_STAGING_DIR"
+
 echo "Created $APP_DIR"
+echo "Created $DMG_PATH"

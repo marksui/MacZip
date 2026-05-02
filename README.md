@@ -1,6 +1,6 @@
 # MarkMacZip
 
-**MarkMacZip v1.0.0** is a local archive app for macOS. It helps you compress and extract files without uploading anything to a server.
+**MarkMacZip v1.1.0** is a local archive app for macOS. It helps you compress and extract files without uploading anything to a server.
 
 ## What You Can Do
 

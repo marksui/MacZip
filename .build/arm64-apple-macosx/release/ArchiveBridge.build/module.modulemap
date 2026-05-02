@@ -1,4 +1,0 @@
-module ArchiveBridge {
-    umbrella "/Users/mark/Documents/GitHub/MacZip/Sources/ArchiveBridge/include"
-    export *
-}

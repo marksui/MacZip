@@ -196,7 +196,7 @@ struct ArchiveOperationResult {
 enum AppStrings {
     static let appTitle = "MarkMacZip"
     static let defaultArchiveName = "Archive"
-    static let appVersion = "v1.0.0"
+    static let appVersion = "v1.1.0"
 
     static func subtitle(for language: AppLanguage) -> String {
         isChinese(language) ? "用简单友好的方式压缩与解压文件，现已支持 RAR 解压。" : "Zip, unzip, and extract RAR files with a simple, friendly workflow."
