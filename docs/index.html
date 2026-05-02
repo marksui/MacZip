@@ -20,7 +20,7 @@
         <a href="#formats">Formats</a>
         <a href="#privacy">Privacy</a>
         <a href="https://github.com/marksui/MacZip">GitHub</a>
-        <a class="nav-download" href="https://github.com/marksui/MacZip/releases" data-download-link>Download</a>
+        <a class="nav-download" href="https://github.com/marksui/MacZip/releases/download/v1.1.0/MarkMacZip-v1.1.0.dmg" data-download-link>Download</a>
       </nav>
     </header>
 
@@ -34,13 +34,13 @@
             Compress and extract archives on your Mac with a clean, local-first workflow, now including RAR extraction.
           </p>
           <div class="hero-actions" aria-label="MarkMacZip actions">
-            <a class="button primary" href="https://github.com/marksui/MacZip/releases" data-download-link>Download for macOS</a>
+            <a class="button primary" href="https://github.com/marksui/MacZip/releases/download/v1.1.0/MarkMacZip-v1.1.0.dmg" data-download-link>Download DMG</a>
             <a class="button secondary" href="https://github.com/marksui/MacZip">View on GitHub</a>
           </div>
           <p class="release-meta">
             <span>MarkMacZip v1.1.0</span>
             <span aria-hidden="true">|</span>
-            <span data-download-count>Checking GitHub downloads...</span>
+            <span data-download-count>Loading download stats...</span>
           </p>
         </div>
       </section>
@@ -147,15 +147,15 @@
         <div>
           <p class="eyebrow">Download</p>
           <h2 id="download-title">Try MarkMacZip from GitHub.</h2>
-          <p>Download the macOS app from GitHub Releases. If macOS warns about an internet download, right-click the app and choose Open.</p>
+          <p>Download the DMG directly from GitHub Releases. If macOS warns about an internet download, right-click the app and choose Open.</p>
           <p class="release-meta compact">
             <span>v1.1.0</span>
             <span aria-hidden="true">|</span>
-            <span data-download-count>Checking GitHub downloads...</span>
+            <span data-download-count>Loading download stats...</span>
           </p>
         </div>
         <div class="download-actions">
-          <a class="button primary" href="https://github.com/marksui/MacZip/releases" data-download-link>Download for macOS</a>
+          <a class="button primary" href="https://github.com/marksui/MacZip/releases/download/v1.1.0/MarkMacZip-v1.1.0.dmg" data-download-link>Download DMG</a>
           <a class="button secondary dark" href="https://github.com/marksui/MacZip">GitHub Repository</a>
         </div>
       </section>
@@ -170,7 +170,7 @@
       const release = {
         apiUrl: "https://api.github.com/repos/marksui/MacZip/releases/tags/v1.1.0",
         assetName: "MarkMacZip-v1.1.0.dmg",
-        fallbackUrl: "https://github.com/marksui/MacZip/releases"
+        downloadUrl: "https://github.com/marksui/MacZip/releases/download/v1.1.0/MarkMacZip-v1.1.0.dmg"
       };
 
       const downloadLinks = document.querySelectorAll("[data-download-link]");
@@ -190,10 +190,10 @@
 
       const formatDownloads = (count) => {
         const formatted = new Intl.NumberFormat("en-US").format(count);
-        return `${formatted} GitHub download${count === 1 ? "" : "s"}`;
+        return `${formatted} DMG download${count === 1 ? "" : "s"}`;
       };
 
-      setDownloadLinks(release.fallbackUrl);
+      setDownloadLinks(release.downloadUrl);
 
       fetch(release.apiUrl, {
         headers: {
@@ -212,11 +212,11 @@
             throw new Error("DMG asset unavailable");
           }
 
-          setDownloadLinks(asset.browser_download_url || release.fallbackUrl);
+          setDownloadLinks(asset.browser_download_url || release.downloadUrl);
           setDownloadCount(formatDownloads(asset.download_count || 0));
         })
         .catch(() => {
-          setDownloadCount("GitHub Releases");
+          setDownloadCount("Download stats unavailable");
         });
     </script>
   </body>
