@@ -1,174 +1,61 @@
 # MarkMacZip
 
-MarkMacZip is an open-source, local-only archive utility for macOS.
+**MarkMacZip v1.0.0** is a local archive app for macOS. It helps you compress and extract files without uploading anything to a server.
 
-It is designed for two audiences:
-- End users who want a clean, reliable app for compressing and extracting files.
-- Interviewers/reviewers who want to evaluate product thinking, engineering tradeoffs, and implementation quality.
+## What You Can Do
 
----
+- Drag files or folders into the app.
+- Create ZIP, 7Z, TAR, TAR.GZ, or GZIP archives.
+- Extract ZIP, RAR, 7Z, TAR, TAR.GZ, and GZIP files into the folder you choose.
+- Add a password for ZIP and 7Z archive workflows, or password-protected RAR extraction.
+- See progress while a job is running.
+- Review recent activity with speed, size, and compression details.
+- Use light or dark mode.
+- Switch between English and Simplified Chinese.
 
-## 1) Product Overview
+## Privacy
 
-MarkMacZip focuses on practical daily workflows:
-- Drag files/folders into the app.
-- Choose output location and archive format.
-- Compress or extract with visible progress.
-- Review operation history with performance metrics.
+MarkMacZip works on your Mac.
 
-### Core product principles
-- **Local-first**: no cloud upload, no analytics pipeline.
-- **Minimal UI**: clear states, low cognitive load.
-- **Operational transparency**: status + activity metrics after each task.
+- Your files stay on your device.
+- There is no cloud upload.
+- There is no analytics tracking.
+- There is no account or sign-in.
 
----
+## Requirements
 
-## 2) Features
+- macOS 11.6 or newer
+- Apple Silicon or Intel Mac
 
-### Archive formats
-- ZIP
-- 7Z (requires local 7z/7zz binary)
-- TAR
-- TAR.GZ / TGZ
-- GZIP
+Some archive formats use macOS built-in tools. 7Z support requires a local `7z` or `7zz` command-line tool. RAR extraction requires `unar`, `unrar`, `7z`, or `7zz`. If a required tool is not installed, the app will show a clear message instead of silently failing.
 
-### UX capabilities
-- Light/Dark theme
-- English / Simplified Chinese
-- Adjustable UI font scale
-- Settings popover + About popover
-- Copyable status text
+## How To Use
 
-### Workflow helpers
-- Remove individual selected files
-- Editable output archive name (default: `Archive`)
-- Output folder auto-suggestion from last selected item
-- Delete entries in Recent Activity
+1. Open MarkMacZip.
+2. Drop files or folders into the main window, or use **Select File**.
+3. Choose an output folder.
+4. Pick an archive format if you are compressing.
+5. Click **Compress** or **Extract**.
 
-### Activity metrics (per operation)
-- Latency (seconds)
-- Throughput (MB/s)
-- Approximate CPU usage (%)
-- Compression ratio + input/output sizes
+## Format Notes
 
----
+- ZIP: compress and extract.
+- RAR: extract when `unar`, `unrar`, `7z`, or `7zz` is installed.
+- 7Z: compress and extract when `7z` or `7zz` is installed.
+- TAR: compress and extract.
+- TAR.GZ / TGZ: compress and extract.
+- GZIP: compresses one file at a time.
 
-## 3) Compatibility
+## Download
 
-- **OS**: macOS 11.6+
-- **CPU**: Apple Silicon and Intel
-- **UI stack**: SwiftUI (macOS app)
-- **Execution model**: local process invocation (`zip`, `tar`, `unzip`, `ditto`, `gzip`, optional `7z/7zz`)
+The macOS app is distributed through GitHub Releases:
 
----
+[Download MarkMacZip](https://github.com/marksui/MacZip/releases)
 
-## 4) Security & Privacy Model
+If macOS says the app cannot be opened because it was downloaded from the internet, right-click the app and choose **Open**.
 
-MarkMacZip intentionally keeps a narrow trust boundary:
-- Files are processed locally on the machine.
-- No telemetry endpoint, no user analytics service, no remote processing.
-- No password cracking/brute-force features.
+## Source Code
 
-Password support is limited to legitimate archive operations (ZIP/7Z workflows).
+MarkMacZip is open source:
 
----
-
-## 5) Project Structure
-
-```text
-MarkMacZip/MarkMacZip/MarkMacZipApp.swift
-MarkMacZip/MarkMacZip/ContentView.swift
-MarkMacZip/MarkMacZip/HistoryStore.swift
-MarkMacZip/MarkMacZip/FilePicker.swift
-MarkMacZip/MarkMacZip/ArchiveService.swift
-MarkMacZip/MarkMacZip/Models.swift
-MarkMacZip/Products/MarkMacZip.app
-docs/index.html
-```
-
-### Key modules
-- `ContentView.swift`
-  - Main UI + view model orchestration
-  - Selection, operation triggers, progress updates, status handling
-- `ArchiveService.swift`
-  - Compression/extraction engine
-  - Format-specific command routing
-  - Progress parsing and operation result reporting
-- `Models.swift`
-  - Domain models, localization strings, format definitions
-- `HistoryStore.swift`
-  - In-memory history records and mutation helpers
-- `docs/index.html`
-  - Public project landing page (GitHub Pages)
-
----
-
-## 6) Running the App
-
-### In Xcode
-1. Open `MarkMacZip.xcodeproj`
-2. Select app target/scheme
-3. Build and run
-
-### Optional dependency for 7Z
-Install one of these executables in common local paths:
-- `7zz`
-- `7z`
-
-If unavailable, 7Z-specific actions are disabled/fail gracefully with a clear message.
-
----
-
-## 7) Format Notes / Known Limitations
-
-- **GZIP compression** supports a single file input only.
-- **7Z support** depends on local binary availability.
-- Progress precision varies by backend command output granularity.
-- CPU usage is an approximate process-level delta, not a profiler-grade metric.
-
----
-
-## 8) Interviewer Notes (Engineering Rationale)
-
-This project demonstrates:
-- **Product framing**: minimal experience for non-technical users while still exposing meaningful metrics.
-- **Pragmatic architecture**: native SwiftUI UI + command-line backend orchestration instead of heavy third-party archive SDKs.
-- **Reliability-minded behavior**:
-  - Multi-format command routing
-  - Format-specific guardrails (e.g., GZIP single-file constraint)
-  - Error propagation into user-facing status/history
-- **Operational visibility**:
-  - progress states
-  - post-operation metrics
-  - explicit failure surfaces
-- **Localization/theming discipline**:
-  - centralized string model
-  - persisted app settings
-
----
-
-## 9) Website / Portfolio Page
-
-`docs/index.html` is prepared for GitHub Pages and includes:
-- Product narrative
-- SoC-performance framing
-- EN/简体中文 switch
-- Download + GitHub CTA placeholders
-
-Replace placeholder links before publishing:
-- `YOUR_DOWNLOAD_LINK_HERE`
-- `YOUR_GITHUB_RELEASES_LINK_HERE`
-
----
-
-## 10) Roadmap (Practical Next Steps)
-
-- Cancelable operations (safe process termination + UI state recovery)
-- Archive content preview before extraction
-- Batch queue with retry and structured result export
-
----
-
-## License
-
-Open source. Add your preferred license file (MIT/Apache-2.0/etc.) if not already included.
+[github.com/marksui/MacZip](https://github.com/marksui/MacZip)

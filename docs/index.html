@@ -1,872 +1,223 @@
 <!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title id="pageTitle">MarkMacZip — Product + Performance Story</title>
-    <meta id="pageDescription" name="description" content="MarkMacZip by Mark Sui — a local-first macOS archive utility with clean design and SoC performance insight." />
-    <style>
-        :root {
-            --bg: #f3f5fa;
-            --ink: #0f1117;
-            --muted: #5d6677;
-            --card: rgba(255,255,255,.68);
-            --line: rgba(15,17,23,.11);
-            --blue: #0a84ff;
-            --teal: #10b1b5;
-            --lime: #29c56e;
-            --radius: 24px;
-            --shadow: 0 24px 56px rgba(22, 30, 50, .14);
-        }
-
-        * { box-sizing: border-box; }
-
-        html { scroll-behavior: smooth; }
-
-        body {
-            margin: 0;
-            color: var(--ink);
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
-            background:
-                radial-gradient(1400px 720px at 8% -12%, #fff 18%, transparent 58%),
-                radial-gradient(980px 620px at 94% 8%, #dcefff 10%, transparent 64%),
-                linear-gradient(160deg, #f7faff, #eef3ff 46%, #f6f8fd);
-            overflow-x: hidden;
-        }
-
-        body::before,
-        body::after {
-            content: "";
-            position: fixed;
-            z-index: -1;
-            border-radius: 999px;
-            filter: blur(54px);
-            opacity: .42;
-            pointer-events: none;
-            animation: drift 14s ease-in-out infinite;
-        }
-
-        body::before {
-            width: 420px;
-            height: 420px;
-            left: -120px;
-            top: -120px;
-            background: rgba(10,132,255,.2);
-        }
-
-        body::after {
-            width: 340px;
-            height: 340px;
-            right: -80px;
-            bottom: -90px;
-            background: rgba(16,177,181,.17);
-            animation-delay: -5s;
-        }
-
-        .progress {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: rgba(10,132,255,.15);
-            z-index: 90;
-        }
-
-        .progress > span {
-            display: block;
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, var(--blue), #42a0ff);
-            transition: width .12s linear;
-        }
-
-        .container {
-            width: min(1160px, calc(100% - 40px));
-            margin: 0 auto;
-        }
-
-        .nav-wrap {
-            position: sticky;
-            top: 14px;
-            z-index: 70;
-            padding-top: 14px;
-        }
-
-        .nav {
-            border: 1px solid var(--line);
-            border-radius: 999px;
-            background: rgba(255,255,255,.73);
-            backdrop-filter: blur(14px);
-            box-shadow: 0 10px 24px rgba(18,24,40,.12);
-            padding: 11px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            font-weight: 700;
-            letter-spacing: -.01em;
-        }
-
-        .mark {
-            width: 22px;
-            height: 22px;
-            border-radius: 7px;
-            background: conic-gradient(from 35deg, var(--blue), var(--teal), var(--lime), var(--blue));
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,.5);
-        }
-
-        .nav-right {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-        }
-
-        .pill {
-            font-size: 12px;
-            color: #164b97;
-            border: 1px solid rgba(10,132,255,.25);
-            background: rgba(10,132,255,.12);
-            border-radius: 999px;
-            padding: 5px 10px;
-        }
-
-        .btn {
-            text-decoration: none;
-            color: var(--ink);
-            border: 1px solid var(--line);
-            background: rgba(255,255,255,.86);
-            border-radius: 999px;
-            font-weight: 600;
-            font-size: 14px;
-            padding: 8px 13px;
-            transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 10px 22px rgba(18,24,40,.12);
-        }
-
-        .btn:active { transform: translateY(0) scale(.985); }
-
-        .btn.download {
-            color: #fff;
-            border-color: transparent;
-            background: linear-gradient(90deg, #0071e3, #2f8fff);
-            box-shadow: 0 14px 26px rgba(10,132,255,.32);
-        }
-
-        .btn.github {
-            color: #fff;
-            border-color: #111;
-            background: #111;
-            box-shadow: 0 12px 24px rgba(17,17,17,.24);
-        }
-
-        .hero {
-            padding: 76px 0 48px;
-            text-align: center;
-        }
-
-        .eyebrow {
-            margin: 0;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            font-size: 12px;
-            color: var(--muted);
-            font-weight: 700;
-            animation: rise .78s cubic-bezier(.2,.7,.1,1) both;
-        }
-
-        h1 {
-            margin: 12px auto;
-            font-size: clamp(42px, 9vw, 96px);
-            line-height: .95;
-            letter-spacing: -.045em;
-            max-width: 10.2ch;
-            font-weight: 760;
-            animation: rise .85s cubic-bezier(.2,.7,.1,1) .1s both;
-        }
-
-        .sub {
-            margin: 0 auto;
-            max-width: 720px;
-            color: var(--muted);
-            font-size: clamp(16px, 2.1vw, 23px);
-            line-height: 1.45;
-            animation: rise .85s cubic-bezier(.2,.7,.1,1) .24s both;
-        }
-
-        .hero-actions {
-            margin-top: 26px;
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-            animation: rise .9s cubic-bezier(.2,.7,.1,1) .36s both;
-        }
-
-        .hero-panel {
-            margin-top: 36px;
-            border: 1px solid var(--line);
-            border-radius: 30px;
-            background: linear-gradient(140deg, rgba(255,255,255,.88), rgba(247,250,255,.69));
-            box-shadow: var(--shadow);
-            overflow: hidden;
-            position: relative;
-            animation: rise .95s cubic-bezier(.2,.7,.1,1) .48s both;
-        }
-
-        .hero-panel::after {
-            content: "";
-            position: absolute;
-            inset: -1px;
-            background: linear-gradient(120deg, transparent 24%, rgba(255,255,255,.4) 40%, transparent 58%);
-            transform: translateX(-130%);
-            animation: sheen 5.5s ease-in-out infinite;
-        }
-
-        .hero-grid {
-            display: grid;
-            grid-template-columns: 1.25fr .95fr;
-            gap: 16px;
-            padding: 24px;
-        }
-
-        .window {
-            border: 1px solid var(--line);
-            background: #fff;
-            border-radius: 18px;
-            overflow: hidden;
-            min-height: 260px;
-        }
-
-        .window-head {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            padding: 10px 12px;
-            border-bottom: 1px solid var(--line);
-            background: #fbfcff;
-        }
-
-        .dot { width: 10px; height: 10px; border-radius: 50%; }
-        .r { background: #ff5f57; }
-        .y { background: #febc2e; }
-        .g { background: #28c840; }
-
-        .window-body { padding: 18px; }
-
-        .window-body h3 {
-            margin: 0 0 8px;
-            font-size: 21px;
-            letter-spacing: -.02em;
-        }
-
-        .window-body p {
-            margin: 0;
-            color: var(--muted);
-            line-height: 1.62;
-        }
-
-        .metrics-col {
-            display: grid;
-            gap: 10px;
-        }
-
-        .kpi {
-            border: 1px solid var(--line);
-            border-radius: 15px;
-            background: var(--card);
-            backdrop-filter: blur(9px);
-            padding: 14px;
-            transition: transform .28s ease, box-shadow .28s ease;
-        }
-
-        .kpi:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 14px 28px rgba(22,30,50,.12);
-        }
-
-        .kpi strong {
-            display: block;
-            font-size: 27px;
-            letter-spacing: -.03em;
-            margin-bottom: 3px;
-        }
-
-        section.block {
-            padding-top: 88px;
-        }
-
-        section.block h2 {
-            margin: 0 0 8px;
-            font-size: clamp(34px, 5vw, 62px);
-            line-height: .98;
-            letter-spacing: -.035em;
-        }
-
-        section.block .lead {
-            margin: 0;
-            color: var(--muted);
-            max-width: 760px;
-            line-height: 1.62;
-            font-size: 17px;
-        }
-
-        .cards {
-            margin-top: 24px;
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 12px;
-        }
-
-        .card {
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            background: var(--card);
-            backdrop-filter: blur(8px);
-            padding: 18px;
-            transition: transform .3s ease, box-shadow .3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 16px 32px rgba(22,30,50,.12);
-        }
-
-        .card h3 { margin: 0 0 8px; font-size: 18px; letter-spacing: -.01em; }
-        .card p { margin: 0; color: var(--muted); line-height: 1.58; font-size: 15px; }
-
-        .story {
-            margin-top: 24px;
-            border: 1px solid var(--line);
-            border-radius: 28px;
-            padding: 20px;
-            background: linear-gradient(130deg, rgba(255,255,255,.88), rgba(245,250,255,.72));
-            box-shadow: var(--shadow);
-        }
-
-        .story-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .story-card {
-            border: 1px solid var(--line);
-            border-radius: 16px;
-            background: rgba(255,255,255,.75);
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .story-card strong { display: block; margin-bottom: 4px; }
-        .story-card p {
-            margin: 0;
-            color: var(--muted);
-            line-height: 1.6;
-        }
-        .edu-list {
-            margin: 0;
-            padding: 0;
-            list-style: none;
-            display: grid;
-            gap: 8px;
-        }
-        .edu-item {
-            padding: 8px 10px;
-            border-radius: 10px;
-            border: 1px solid var(--line);
-            background: rgba(255,255,255,.72);
-            color: #2f394b;
-            font-size: 14px;
-            line-height: 1.45;
-        }
-        .edu-item .year {
-            font-weight: 700;
-            margin-right: 6px;
-            color: #1d3f77;
-        }
-        .edu-school {
-            margin-top: 2px;
-            color: var(--muted);
-            font-size: 13px;
-        }
-        .school-logo {
-            margin-top: 2px;
-            width: 230px;
-            max-width: 100%;
-            height: auto;
-            display: block;
-            opacity: 0.9;
-        }
-
-        .soc-wrap {
-            margin-top: 24px;
-            display: grid;
-            grid-template-columns: 1.2fr .8fr;
-            gap: 12px;
-        }
-
-        .soc-panel {
-            border: 1px solid var(--line);
-            border-radius: 22px;
-            background: var(--card);
-            padding: 16px;
-            backdrop-filter: blur(8px);
-        }
-
-        .soc-panel h3 {
-            margin: 0 0 8px;
-            font-size: 21px;
-            letter-spacing: -.02em;
-        }
-
-        .soc-panel p {
-            margin: 0;
-            color: var(--muted);
-            line-height: 1.6;
-        }
-
-        .bars {
-            margin-top: 14px;
-            display: grid;
-            gap: 10px;
-        }
-
-        .bar-row {
-            display: grid;
-            grid-template-columns: 112px 1fr 52px;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            color: #374153;
-        }
-
-        .bar-track {
-            height: 10px;
-            border-radius: 999px;
-            background: rgba(16,17,23,.09);
-            overflow: hidden;
-        }
-
-        .bar-fill {
-            height: 100%;
-            width: var(--fill, 0%);
-            background: linear-gradient(90deg, var(--blue), #58acff);
-            border-radius: 999px;
-            transform-origin: left center;
-            transform: scaleX(0);
-            transition: transform 1.1s cubic-bezier(.22,.7,.1,1);
-        }
-
-        .visible .bar-fill { transform: scaleX(1); }
-
-        .soc-note {
-            margin-top: 10px;
-            font-size: 12px;
-            color: #6a7384;
-        }
-
-        .timeline {
-            margin-top: 14px;
-            display: grid;
-            gap: 10px;
-        }
-
-        .timeline-item {
-            border: 1px solid var(--line);
-            border-radius: 14px;
-            padding: 12px;
-            background: rgba(255,255,255,.78);
-        }
-
-        .timeline-item strong { font-size: 14px; }
-        .timeline-item p { margin: 4px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
-
-        .footer {
-            margin: 84px 0 36px;
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 10px;
-            color: var(--muted);
-            font-size: 14px;
-        }
-
-        [data-reveal] {
-            opacity: 0;
-            transform: translateY(26px) scale(.99);
-            transition: opacity .78s cubic-bezier(.2,.7,.1,1), transform .78s cubic-bezier(.2,.7,.1,1);
-        }
-
-        [data-reveal].visible {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-
-        @media (max-width: 980px) {
-            .hero-grid,
-            .soc-wrap { grid-template-columns: 1fr; }
-            .cards { grid-template-columns: 1fr; }
-            .story-grid { grid-template-columns: 1fr; }
-            .hero { padding-top: 58px; }
-            .bar-row { grid-template-columns: 92px 1fr 44px; }
-        }
-
-        @keyframes rise {
-            from { opacity: 0; transform: translateY(22px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes sheen {
-            0%, 74% { transform: translateX(-130%); }
-            100% { transform: translateX(130%); }
-        }
-
-        @keyframes drift {
-            0%, 100% { transform: translateY(0) translateX(0) scale(1); }
-            50% { transform: translateY(-18px) translateX(12px) scale(1.04); }
-        }
-    </style>
-</head>
-<body>
-    <div class="progress"><span id="scrollProgress"></span></div>
-
-    <div class="container nav-wrap">
-        <nav class="nav">
-            <div class="brand"><span class="mark"></span>MarkMacZip</div>
-            <div class="nav-right">
-                <span class="pill">v1.2.3</span>
-                <a class="btn" href="#product" id="navProduct">Product</a>
-                <a class="btn" href="#soc" id="navSoc">SoC Performance</a>
-                <a class="btn" href="#about" id="navAbout">About</a>
-                <button class="btn" id="langToggle" type="button">中文</button>
-            </div>
-        </nav>
-    </div>
-
-    <main class="container">
-        <section class="hero">
-            <p class="eyebrow" id="heroEyebrow">designer-style product page</p>
-            <h1 id="heroTitle">MarkMacZip.<br/>Minimal by Design.</h1>
-            <p class="sub" id="heroSub">
-                A local-only macOS archive utility that feels like a product, not a script.
-                Clean interaction model, visible performance, and practical support for real workloads.
-            </p>
-            <div class="hero-actions">
-                <a class="btn download" href="YOUR_DOWNLOAD_LINK_HERE" id="btnDownload">Download MarkMacZip</a>
-                <a class="btn github" href="YOUR_GITHUB_RELEASES_LINK_HERE" target="_blank" rel="noreferrer" id="btnGithub">Get on GitHub</a>
-                <a class="btn" href="#soc" id="btnSoc">Why SoC Matters</a>
-            </div>
-
-            <div class="hero-panel" data-reveal>
-                <div class="hero-grid">
-                    <div class="window">
-                        <div class="window-head">
-                            <span class="dot r"></span>
-                            <span class="dot y"></span>
-                            <span class="dot g"></span>
-                        </div>
-                        <div class="window-body">
-                            <h3 id="panelTitle">From Drag-and-Drop to Done</h3>
-                            <p id="panelDesc">
-                                ZIP / 7Z / TAR / TAR.GZ / GZIP in one focused workflow.
-                                Progress UI plus activity metrics makes every task traceable.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="metrics-col">
-                        <div class="kpi" data-reveal id="kpiLocal"><strong>100% Local</strong><span>No cloud. No analytics. Your files stay on device.</span></div>
-                        <div class="kpi" data-reveal id="kpiCompat"><strong>11.6+</strong><span>macOS compatibility across Apple Silicon and Intel.</span></div>
-                        <div class="kpi" data-reveal id="kpiMetrics"><strong>Visible Metrics</strong><span>Latency, throughput, CPU estimate, ratio.</span></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="product" class="block" data-reveal>
-            <h2 id="productTitle">Product Story</h2>
-            <p class="lead" id="productLead">
-                The interface is intentionally restrained: fewer clicks, clearer states, and no noise.
-                This page mirrors that philosophy with high-clarity typography and motion-led storytelling.
-            </p>
-
-            <div class="cards">
-                <article class="card" data-reveal>
-                    <h3 id="card1Title">Live Progress</h3>
-                    <p id="card1Desc">Smooth operation feedback for long tasks with explicit success/error state handling.</p>
-                </article>
-                <article class="card" data-reveal>
-                    <h3 id="card2Title">Activity Intelligence</h3>
-                    <p id="card2Desc">Each job records operational metrics so users can evaluate real runtime behavior.</p>
-                </article>
-                <article class="card" data-reveal>
-                    <h3 id="card3Title">Local-First Trust</h3>
-                    <p id="card3Desc">No cloud upload surface area, no telemetry dependency, no privacy ambiguity.</p>
-                </article>
-            </div>
-        </section>
-
-        <section id="soc" class="block" data-reveal>
-            <h2 id="socTitle">SoC Performance Lens</h2>
-            <p class="lead" id="socLead">
-                MarkMacZip is not only about format support. It is also a practical lens for observing
-                how different Macs behave under real archive workloads: bandwidth, CPU pressure, and ratio outcomes.
-            </p>
-
-            <div class="soc-wrap">
-                <div class="soc-panel" data-reveal>
-                    <h3 id="socPanel1Title">Runtime Signals You Can Compare</h3>
-                    <p id="socPanel1Desc">
-                        Use the app’s activity metrics to compare machines and workload patterns.
-                        Replace values below with your own benchmark output when publishing.
-                    </p>
-                    <div class="bars" id="socBars">
-                        <div class="bar-row">
-                            <span id="barLabel1">M-Series</span>
-                            <div class="bar-track"><div class="bar-fill" style="--fill: 92%"></div></div>
-                            <strong>92</strong>
-                        </div>
-                        <div class="bar-row">
-                            <span id="barLabel2">Intel</span>
-                            <div class="bar-track"><div class="bar-fill" style="--fill: 74%"></div></div>
-                            <strong>74</strong>
-                        </div>
-                        <div class="bar-row">
-                            <span id="barLabel3">I/O Bound</span>
-                            <div class="bar-track"><div class="bar-fill" style="--fill: 81%"></div></div>
-                            <strong>81</strong>
-                        </div>
-                        <div class="bar-row">
-                            <span id="barLabel4">CPU Bound</span>
-                            <div class="bar-track"><div class="bar-fill" style="--fill: 66%"></div></div>
-                            <strong>66</strong>
-                        </div>
-                    </div>
-                    <p class="soc-note" id="socNote">Illustrative visual: keep layout, replace scores with your measured data.</p>
-                </div>
-
-                <div class="soc-panel" data-reveal>
-                    <h3 id="socPanel2Title">Performance Narrative</h3>
-                    <div class="timeline">
-                        <div class="timeline-item">
-                            <strong id="timeline1Title">Step 1 · Select Workload</strong>
-                            <p id="timeline1Desc">Single large file vs. mixed folder trees reveals different throughput behavior.</p>
-                        </div>
-                        <div class="timeline-item">
-                            <strong id="timeline2Title">Step 2 · Compare Signals</strong>
-                            <p id="timeline2Desc">Latency and MB/s show bandwidth efficiency; CPU estimate shows processing pressure.</p>
-                        </div>
-                        <div class="timeline-item">
-                            <strong id="timeline3Title">Step 3 · Interpret Ratio</strong>
-                            <p id="timeline3Desc">Compression ratio helps contextualize speed numbers against actual space savings.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="about" class="block" data-reveal>
-            <h2 id="aboutTitle">Creator Background</h2>
-            <div class="story">
-                <div class="story-grid">
-                    <article class="story-card" data-reveal>
-                        <strong id="aboutCard1Title">Mark Sui</strong>
-                        <p id="aboutCard1Desc">Builder focused on practical systems tooling, product clarity, and measurable UX quality.</p>
-                    </article>
-                    <article class="story-card" data-reveal>
-                        <strong id="aboutCard2Title">UC San Diego</strong>
-                        <div class="edu-list" id="aboutCard2Desc">
-                            <div class="edu-item"><span class="year">2025</span>Bachelor of Science in Computer Engineering (B.S., CE)</div>
-                            <div class="edu-item"><span class="year">2025</span>Bachelor of Science in Mathematics (B.S., Mathematics)</div>
-                            <div class="edu-item"><span class="year">2026</span>Master of Science in Electrical and Computer Engineering (M.S., ECE)</div>
-                            <div class="edu-school">University of California, San Diego</div>
-                        </div>
-                        <img
-                            class="school-logo"
-                            src="https://jacobsschool.ucsd.edu/sites/default/files/groups/jsoe/img/logos/ece/digital/UCSDLogo-JSOE-ElectricalandComputerEngineering-BlueGold.png"
-                            alt="UC San Diego logo"
-                        />
-                    </article>
-                </div>
-            </div>
-        </section>
-
-        <footer class="footer" data-reveal>
-            <span id="footerLeft">MarkMacZip · v1.2.3</span>
-            <span id="footerRight">Built by Mark Sui · UC San Diego</span>
-        </footer>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="MarkMacZip is a local-first macOS app for compressing and extracting ZIP, RAR, 7Z, TAR, TAR.GZ, and GZIP archives.">
+    <title>MarkMacZip - local archive app for macOS</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="MarkMacZip home">
+        <img class="brand-mark" src="assets/markmaczip-icon.png" width="512" height="512" alt="" aria-hidden="true">
+        <span>MarkMacZip</span>
+      </a>
+      <nav class="site-nav" aria-label="Primary navigation">
+        <a href="#features">Features</a>
+        <a href="#formats">Formats</a>
+        <a href="#privacy">Privacy</a>
+        <a href="https://github.com/marksui/MacZip">GitHub</a>
+        <a class="nav-download" href="https://github.com/marksui/MacZip/releases" data-download-link>Download</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-content">
+          <img class="hero-icon" src="assets/markmaczip-icon.png" width="512" height="512" alt="" aria-hidden="true">
+          <p class="eyebrow">Open source macOS app | v1.0.0</p>
+          <h1 id="hero-title">MarkMacZip</h1>
+          <p class="hero-subtitle">
+            Compress and extract archives on your Mac with a clean, local-first workflow, now including RAR extraction.
+          </p>
+          <div class="hero-actions" aria-label="MarkMacZip actions">
+            <a class="button primary" href="https://github.com/marksui/MacZip/releases" data-download-link>Download for macOS</a>
+            <a class="button secondary" href="https://github.com/marksui/MacZip">View on GitHub</a>
+          </div>
+          <p class="release-meta">
+            <span>MarkMacZip v1.0.0</span>
+            <span aria-hidden="true">|</span>
+            <span data-download-count>Checking GitHub downloads...</span>
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="features" aria-labelledby="features-title">
+        <div class="section-heading">
+          <p class="eyebrow">Features</p>
+          <h2 id="features-title">Built for everyday archive work.</h2>
+        </div>
+        <div class="feature-grid">
+          <article>
+            <span class="feature-chip">Drag and drop</span>
+            <h3>Add files fast.</h3>
+            <p>Drop files or folders into the app, then choose where the result should be saved.</p>
+          </article>
+          <article>
+            <span class="feature-chip">Compress</span>
+            <h3>Create clean archives.</h3>
+            <p>Choose the output name, select a format, and create a new archive from one or many items.</p>
+          </article>
+          <article>
+            <span class="feature-chip">Extract</span>
+            <h3>Unpack supported files.</h3>
+            <p>Extract common archive types into a folder you control, with clear success and error states.</p>
+          </article>
+          <article>
+            <span class="feature-chip">History</span>
+            <h3>See what happened.</h3>
+            <p>Recent activity shows latency, throughput, CPU estimate, sizes, and compression ratio.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section formats" id="formats" aria-labelledby="formats-title">
+        <div class="section-heading">
+          <p class="eyebrow">Formats</p>
+          <h2 id="formats-title">One focused place for common archive types.</h2>
+        </div>
+        <div class="format-grid">
+          <article>
+            <strong>ZIP</strong>
+            <span>Compress and extract</span>
+          </article>
+          <article>
+            <strong>RAR</strong>
+            <span>Extract with unar, unrar, or 7-Zip</span>
+          </article>
+          <article>
+            <strong>7Z</strong>
+            <span>Requires local 7z or 7zz</span>
+          </article>
+          <article>
+            <strong>TAR</strong>
+            <span>Compress and extract</span>
+          </article>
+          <article>
+            <strong>TAR.GZ</strong>
+            <span>Also supports TGZ</span>
+          </article>
+          <article>
+            <strong>GZIP</strong>
+            <span>Single-file compression</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="section setup" aria-labelledby="setup-title">
+        <div class="section-heading">
+          <p class="eyebrow">Workflow</p>
+          <h2 id="setup-title">Choose, save, compress or extract.</h2>
+        </div>
+        <div class="setup-grid">
+          <div>
+            <span>1</span>
+            <h3>Select your files.</h3>
+            <p>Use the file picker or drag files and folders directly into the window.</p>
+          </div>
+          <div>
+            <span>2</span>
+            <h3>Pick a destination.</h3>
+            <p>Choose the folder where MarkMacZip should write the finished archive or extracted files.</p>
+          </div>
+          <div>
+            <span>3</span>
+            <h3>Run the job.</h3>
+            <p>Watch progress, copy the status if needed, and review the result in Recent Activity.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section privacy" id="privacy" aria-labelledby="privacy-title">
+        <div class="section-heading">
+          <p class="eyebrow">Privacy</p>
+          <h2 id="privacy-title">Your files stay on your Mac.</h2>
+        </div>
+        <div class="privacy-grid">
+          <p>No cloud upload.</p>
+          <p>No account or sign-in.</p>
+          <p>No analytics tracking.</p>
+        </div>
+      </section>
+
+      <section class="download-panel" aria-labelledby="download-title">
+        <div>
+          <p class="eyebrow">Download</p>
+          <h2 id="download-title">Try MarkMacZip from GitHub.</h2>
+          <p>Download the macOS app from GitHub Releases. If macOS warns about an internet download, right-click the app and choose Open.</p>
+          <p class="release-meta compact">
+            <span>v1.0.0</span>
+            <span aria-hidden="true">|</span>
+            <span data-download-count>Checking GitHub downloads...</span>
+          </p>
+        </div>
+        <div class="download-actions">
+          <a class="button primary" href="https://github.com/marksui/MacZip/releases" data-download-link>Download for macOS</a>
+          <a class="button secondary dark" href="https://github.com/marksui/MacZip">GitHub Repository</a>
+        </div>
+      </section>
     </main>
 
+    <footer class="site-footer">
+      <span>MarkMacZip v1.0.0</span>
+      <span>Open source macOS archive utility</span>
+    </footer>
+
     <script>
-        const i18n = {
-            en: {
-                pageTitle: 'MarkMacZip — Product + Performance Story',
-                pageDescription: 'MarkMacZip by Mark Sui — a local-first macOS archive utility with clean design and SoC performance insight.',
-                navProduct: 'Product',
-                navSoc: 'SoC Performance',
-                navAbout: 'About',
-                langToggle: '中文',
-                heroEyebrow: 'designer-style product page',
-                heroTitle: 'MarkMacZip.<br/>Minimal by Design.',
-                heroSub: 'Open-source, local-only archive utility for macOS. Simple UI, fast workflow, clear metrics.',
-                btnDownload: 'Download MarkMacZip',
-                btnGithub: 'Get on GitHub',
-                btnSoc: 'Why SoC Matters',
-                panelTitle: 'From Drag-and-Drop to Done',
-                panelDesc: 'ZIP / 7Z / TAR / TAR.GZ / GZIP in one clean flow.',
-                kpiLocal: '<strong>100% Local</strong><span>No cloud. No analytics. Your files stay on device.</span>',
-                kpiCompat: '<strong>11.6+</strong><span>macOS compatibility across Apple Silicon and Intel.</span>',
-                kpiMetrics: '<strong>Open Source</strong><span>Code is public and transparent.</span>',
-                productTitle: 'Product Story',
-                productLead: 'Minimal by intent: fewer clicks, clearer states, no clutter.',
-                card1Title: 'Live Progress',
-                card1Desc: 'Real-time feedback for long tasks.',
-                card2Title: 'Activity Metrics',
-                card2Desc: 'Latency, MB/s, CPU estimate, compression ratio.',
-                card3Title: 'Open-Source Trust',
-                card3Desc: 'Transparent implementation, local-first behavior.',
-                socTitle: 'SoC Performance Lens',
-                socLead: 'Use archive tasks to compare real Mac behavior: bandwidth, CPU pressure, and ratio outcomes.',
-                socPanel1Title: 'Runtime Signals You Can Compare',
-                socPanel1Desc: 'Compare machines with the same workload. Replace sample scores with your own data.',
-                barLabel1: 'M-Series',
-                barLabel2: 'Intel',
-                barLabel3: 'I/O Bound',
-                barLabel4: 'CPU Bound',
-                socNote: 'Illustrative visual: keep layout, replace scores with your measured data.',
-                socPanel2Title: 'Performance Narrative',
-                timeline1Title: 'Step 1 · Select Workload',
-                timeline1Desc: 'Single large file and mixed folders expose different behavior.',
-                timeline2Title: 'Step 2 · Compare Signals',
-                timeline2Desc: 'Use latency/MBps for bandwidth, CPU estimate for processing pressure.',
-                timeline3Title: 'Step 3 · Interpret Ratio',
-                timeline3Desc: 'Read speed together with actual space savings.',
-                aboutTitle: 'Creator Background',
-                aboutCard1Title: 'Mark Sui',
-                aboutCard1Desc: 'I built MarkMacZip because my mom could not use existing archive tools comfortably. I wanted something simple, clear, and reliable.',
-                aboutCard2Title: 'UC San Diego',
-                aboutCard2Desc: '<div class=\"edu-item\"><span class=\"year\">2025</span>Bachelor of Science in Computer Engineering (B.S., CE)</div><div class=\"edu-item\"><span class=\"year\">2025</span>Bachelor of Science in Mathematics (B.S., Mathematics)</div><div class=\"edu-item\"><span class=\"year\">2026</span>Master of Science in Electrical and Computer Engineering (M.S., ECE)</div><div class=\"edu-school\">University of California, San Diego</div>',
-                footerLeft: 'MarkMacZip · v1.2.3',
-                footerRight: 'Open Source · Built by Mark Sui · UC San Diego'
-            },
-            zh: {
-                pageTitle: 'MarkMacZip — 产品与性能叙事',
-                pageDescription: 'MarkMacZip 由 Mark Sui 打造：本地优先的 macOS 压缩工具，兼顾设计感与 SoC 性能视角。',
-                navProduct: '产品',
-                navSoc: 'SoC 性能',
-                navAbout: '关于',
-                langToggle: 'EN',
-                heroEyebrow: '设计师风格产品页',
-                heroTitle: 'MarkMacZip。<br/>极简而强大。',
-                heroSub: '开源、本地优先的 macOS 压缩工具。界面简单，流程快速，指标清楚。',
-                btnDownload: '下载 MarkMacZip',
-                btnGithub: '前往 GitHub',
-                btnSoc: '为什么关注 SoC',
-                panelTitle: '从拖拽到完成',
-                panelDesc: '在一个统一流程中支持 ZIP / 7Z / TAR / TAR.GZ / GZIP。',
-                kpiLocal: '<strong>100% 本地</strong><span>无云上传、无分析埋点，文件只在你的设备上处理。</span>',
-                kpiCompat: '<strong>11.6+</strong><span>兼容 Apple Silicon 与 Intel 的 macOS 设备。</span>',
-                kpiMetrics: '<strong>开源</strong><span>代码公开透明，可自行审查。</span>',
-                productTitle: '产品叙事',
-                productLead: '刻意收敛：更少点击、更清晰状态、无多余干扰。',
-                card1Title: '实时进度',
-                card1Desc: '长任务也有稳定可见反馈。',
-                card2Title: '活动指标',
-                card2Desc: '记录耗时、MB/s、CPU 估算、压缩比。',
-                card3Title: '开源可信',
-                card3Desc: '实现可见、行为可验证、本地优先。',
-                socTitle: 'SoC 性能视角',
-                socLead: '通过归档任务观察不同 Mac 的真实表现：带宽、CPU 压力与压缩比。',
-                socPanel1Title: '可对比的运行信号',
-                socPanel1Desc: '同一负载比较不同机器。发布时可替换为你的实测分数。',
-                barLabel1: 'M 系列',
-                barLabel2: 'Intel',
-                barLabel3: 'I/O 受限',
-                barLabel4: 'CPU 受限',
-                socNote: '示意图：保留布局，替换为你的实测分数。',
-                socPanel2Title: '性能叙事路径',
-                timeline1Title: '步骤 1 · 选择负载',
-                timeline1Desc: '单个大文件与混合目录会表现不同。',
-                timeline2Title: '步骤 2 · 对比信号',
-                timeline2Desc: '延迟与 MB/s 看带宽，CPU 估算看处理压力。',
-                timeline3Title: '步骤 3 · 解读压缩比',
-                timeline3Desc: '把速度与空间收益一起解读。',
-                aboutTitle: '创作背景',
-                aboutCard1Title: 'Mark Sui',
-                aboutCard1Desc: '我做 MarkMacZip 的直接原因是我妈不会用现有压缩软件。我希望它对非技术用户也足够简单、清楚、可靠。',
-                aboutCard2Title: 'UC San Diego',
-                aboutCard2Desc: '<div class=\"edu-item\"><span class=\"year\">2025</span>计算机工程理学学士（Bachelor of Science in Computer Engineering）</div><div class=\"edu-item\"><span class=\"year\">2025</span>数学理学学士（Bachelor of Science in Mathematics）</div><div class=\"edu-item\"><span class=\"year\">2026</span>电子与计算机工程理学硕士（Master of Science in Electrical and Computer Engineering）</div><div class=\"edu-school\">加州大学圣地亚哥分校（University of California, San Diego）</div>',
-                footerLeft: 'MarkMacZip · v1.2.3',
-                footerRight: '开源项目 · Mark Sui · UC San Diego'
-            }
-        };
+      const release = {
+        apiUrl: "https://api.github.com/repos/marksui/MacZip/releases/tags/v1.0.0",
+        assetName: "MarkMacZip-v1.0.0.dmg",
+        fallbackUrl: "https://github.com/marksui/MacZip/releases"
+      };
 
-        const applyLanguage = (lang) => {
-            const dict = i18n[lang] || i18n.en;
-            document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
-            document.title = dict.pageTitle;
-            const meta = document.getElementById('pageDescription');
-            if (meta) meta.setAttribute('content', dict.pageDescription);
+      const downloadLinks = document.querySelectorAll("[data-download-link]");
+      const downloadCountNodes = document.querySelectorAll("[data-download-count]");
 
-            Object.keys(dict).forEach((key) => {
-                if (key === 'pageTitle' || key === 'pageDescription') return;
-                const el = document.getElementById(key);
-                if (!el) return;
-                if (key.startsWith('heroTitle') || key.startsWith('kpi') || key === 'aboutCard2Desc') {
-                    el.innerHTML = dict[key];
-                } else {
-                    el.textContent = dict[key];
-                }
-            });
-
-            localStorage.setItem('siteLang', lang);
-        };
-
-        const initialLang = localStorage.getItem('siteLang') || (navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en');
-        applyLanguage(initialLang);
-
-        document.getElementById('langToggle')?.addEventListener('click', () => {
-            const current = document.documentElement.lang.startsWith('zh') ? 'zh' : 'en';
-            applyLanguage(current === 'zh' ? 'en' : 'zh');
+      const setDownloadLinks = (url) => {
+        downloadLinks.forEach((link) => {
+          link.href = url;
         });
+      };
 
-        const progressEl = document.getElementById('scrollProgress');
-        const updateProgress = () => {
-            const scrollTop = window.scrollY;
-            const max = document.documentElement.scrollHeight - window.innerHeight;
-            const pct = max > 0 ? (scrollTop / max) * 100 : 0;
-            progressEl.style.width = `${Math.min(Math.max(pct, 0), 100)}%`;
-        };
-        updateProgress();
-        window.addEventListener('scroll', updateProgress, { passive: true });
+      const setDownloadCount = (text) => {
+        downloadCountNodes.forEach((node) => {
+          node.textContent = text;
+        });
+      };
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach((entry) => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.14, rootMargin: '0px 0px -8% 0px' });
+      const formatDownloads = (count) => {
+        const formatted = new Intl.NumberFormat("en-US").format(count);
+        return `${formatted} GitHub download${count === 1 ? "" : "s"}`;
+      };
 
-        document.querySelectorAll('[data-reveal]').forEach((el, idx) => {
-            el.style.transitionDelay = `${Math.min(idx * 34, 240)}ms`;
-            observer.observe(el);
+      setDownloadLinks(release.fallbackUrl);
+
+      fetch(release.apiUrl, {
+        headers: {
+          Accept: "application/vnd.github+json"
+        }
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Release unavailable");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          const asset = data.assets?.find((item) => item.name === release.assetName);
+          if (!asset) {
+            throw new Error("DMG asset unavailable");
+          }
+
+          setDownloadLinks(asset.browser_download_url || release.fallbackUrl);
+          setDownloadCount(formatDownloads(asset.download_count || 0));
+        })
+        .catch(() => {
+          setDownloadCount("GitHub Releases");
         });
     </script>
-</body>
+  </body>
 </html>

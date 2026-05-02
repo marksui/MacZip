@@ -4,9 +4,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD_DIR="$ROOT_DIR/.build/release"
 DIST_DIR="$ROOT_DIR/dist"
-APP_DIR="$DIST_DIR/MyArchive.app"
+APP_DIR="$DIST_DIR/MarkMacZip.app"
 EXECUTABLE_NAME="MyArchiveGUI"
 EXECUTABLE_PATH="$BUILD_DIR/$EXECUTABLE_NAME"
+ICON_PATH="$ROOT_DIR/Resources/MarkMacZip.icns"
+ICON_NAME="MarkMacZip.icns"
 
 if [[ "$(uname)" != "Darwin" ]]; then
   echo "This script must be run on macOS."
@@ -52,6 +54,10 @@ mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources" "$APP_DIR/Conte
 cp "$EXECUTABLE_PATH" "$APP_DIR/Contents/MacOS/$EXECUTABLE_NAME"
 chmod +x "$APP_DIR/Contents/MacOS/$EXECUTABLE_NAME"
 
+if [[ -f "$ICON_PATH" ]]; then
+  cp "$ICON_PATH" "$APP_DIR/Contents/Resources/$ICON_NAME"
+fi
+
 cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -62,15 +68,19 @@ cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
   <key>CFBundleExecutable</key>
   <string>MyArchiveGUI</string>
   <key>CFBundleIdentifier</key>
-  <string>com.example.myarchive</string>
+  <string>com.markmaczip.app</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>5.0</string>
   <key>CFBundleName</key>
-  <string>MyArchive</string>
+  <string>MarkMacZip</string>
+  <key>CFBundleDisplayName</key>
+  <string>MarkMacZip</string>
+  <key>CFBundleIconFile</key>
+  <string>MarkMacZip.icns</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.1.0</string>
+  <string>1.0.0</string>
   <key>CFBundleVersion</key>
   <string>1</string>
   <key>LSMinimumSystemVersion</key>

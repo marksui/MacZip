@@ -38,6 +38,7 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 
 enum ArchiveFormat: String, CaseIterable, Identifiable {
     case zip
+    case rar
     case sevenZ
     case tar
     case tarGz
@@ -49,6 +50,8 @@ enum ArchiveFormat: String, CaseIterable, Identifiable {
         switch self {
         case .zip:
             return "zip"
+        case .rar:
+            return "rar"
         case .sevenZ:
             return "7z"
         case .tar:
@@ -61,13 +64,15 @@ enum ArchiveFormat: String, CaseIterable, Identifiable {
     }
 
     var supportsPassword: Bool {
-        self == .zip || self == .sevenZ
+        self == .zip || self == .rar || self == .sevenZ
     }
 
     func title(for language: AppLanguage) -> String {
         switch self {
         case .zip:
             return "ZIP"
+        case .rar:
+            return "RAR"
         case .sevenZ:
             return "7Z"
         case .tar:
@@ -88,6 +93,10 @@ enum ArchiveFormat: String, CaseIterable, Identifiable {
 
         if lowercasedName.hasSuffix(".7z") {
             return .sevenZ
+        }
+
+        if lowercasedName.hasSuffix(".rar") {
+            return .rar
         }
 
         if lowercasedName.hasSuffix(".tar") {
@@ -187,10 +196,10 @@ struct ArchiveOperationResult {
 enum AppStrings {
     static let appTitle = "MarkMacZip"
     static let defaultArchiveName = "Archive"
-    static let appVersion = "v1.2.3"
+    static let appVersion = "v1.0.0"
 
     static func subtitle(for language: AppLanguage) -> String {
-        isChinese(language) ? "用简单友好的方式压缩与解压文件。" : "Zip and unzip files with a simple, friendly workflow."
+        isChinese(language) ? "用简单友好的方式压缩与解压文件，现已支持 RAR 解压。" : "Zip, unzip, and extract RAR files with a simple, friendly workflow."
     }
 
     static func dropTitle(for language: AppLanguage) -> String {
@@ -198,7 +207,7 @@ enum AppStrings {
     }
 
     static func dropSubtitle(for language: AppLanguage) -> String {
-        isChinese(language) ? "支持 ZIP、7Z、TAR、TAR.GZ/TGZ、GZIP。" : "Supports ZIP, 7Z, TAR, TAR.GZ/TGZ, and GZIP."
+        isChinese(language) ? "支持 ZIP、RAR、7Z、TAR、TAR.GZ/TGZ、GZIP。" : "Supports ZIP, RAR, 7Z, TAR, TAR.GZ/TGZ, and GZIP."
     }
 
     static func selectedItemsTitle(for language: AppLanguage) -> String {
@@ -238,7 +247,7 @@ enum AppStrings {
     }
 
     static func archivePasswordPlaceholder(for language: AppLanguage) -> String {
-        isChinese(language) ? "用于 ZIP/7Z 压缩或解压，留空表示不使用密码" : "Used for ZIP/7Z compression or extraction. Leave empty for no password."
+        isChinese(language) ? "用于 ZIP/7Z 压缩或解压，也可用于 RAR 解压；留空表示不使用密码" : "Used for ZIP/7Z compression or extraction, and RAR extraction. Leave empty for no password."
     }
 
     static func copyStatusButton(for language: AppLanguage) -> String {
@@ -270,7 +279,7 @@ enum AppStrings {
     }
 
     static func pickerSelectMessage(for language: AppLanguage) -> String {
-        isChinese(language) ? "选择文件、文件夹或支持的归档文件（ZIP/7Z/TAR/TAR.GZ/TGZ/GZ）。" : "Choose files, folders, or supported archives (ZIP/7Z/TAR/TAR.GZ/TGZ/GZ)."
+        isChinese(language) ? "选择文件、文件夹或支持的归档文件（ZIP/RAR/7Z/TAR/TAR.GZ/TGZ/GZ）。" : "Choose files, folders, or supported archives (ZIP/RAR/7Z/TAR/TAR.GZ/TGZ/GZ)."
     }
 
     static func pickerOutputMessage(for language: AppLanguage) -> String {
@@ -310,7 +319,7 @@ enum AppStrings {
     }
 
     static func invalidArchiveSelection(for language: AppLanguage) -> String {
-        isChinese(language) ? "仅支持 ZIP、7Z、TAR、TAR.GZ/TGZ、GZIP。" : "Only ZIP, 7Z, TAR, TAR.GZ/TGZ, and GZIP are supported."
+        isChinese(language) ? "仅支持 ZIP、RAR、7Z、TAR、TAR.GZ/TGZ、GZIP。" : "Only ZIP, RAR, 7Z, TAR, TAR.GZ/TGZ, and GZIP are supported."
     }
 
     static func invalidDrop(for language: AppLanguage) -> String {
@@ -404,6 +413,18 @@ enum AppStrings {
         isChinese(language) ? "失败" : "Failed"
     }
 
+    static func progressWorking(for language: AppLanguage) -> String {
+        isChinese(language) ? "正在处理" : "Working"
+    }
+
+    static func progressReady(for language: AppLanguage) -> String {
+        isChinese(language) ? "等待任务" : "Ready"
+    }
+
+    static func progressIndeterminate(for language: AppLanguage) -> String {
+        isChinese(language) ? "计算中" : "Calculating"
+    }
+
     static func latencyTitle(for language: AppLanguage) -> String {
         isChinese(language) ? "耗时" : "Latency"
     }
@@ -437,6 +458,14 @@ enum AppStrings {
 
     static func unsupportedSevenZip(for language: AppLanguage) -> String {
         isChinese(language) ? "未检测到 7z 命令行工具。可安装 p7zip 后重试。" : "7z command-line tool not found. Install p7zip and try again."
+    }
+
+    static func unsupportedRar(for language: AppLanguage) -> String {
+        isChinese(language) ? "未检测到 RAR 解压工具。可安装 unar、unrar 或 p7zip 后重试。" : "RAR extraction tool not found. Install unar, unrar, or p7zip and try again."
+    }
+
+    static func unsupportedCompressionFormat(for language: AppLanguage) -> String {
+        isChinese(language) ? "该格式暂不支持压缩。" : "Compression is not available for this format."
     }
 
     private static func isChinese(_ language: AppLanguage) -> Bool {

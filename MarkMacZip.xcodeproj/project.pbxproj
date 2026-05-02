@@ -13,6 +13,7 @@
 		A10000040000000000000001 /* FilePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001040000000000000001 /* FilePicker.swift */; };
 		A10000050000000000000001 /* ArchiveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001050000000000000001 /* ArchiveService.swift */; };
 		A10000060000000000000001 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10001060000000000000001 /* Models.swift */; };
+		A10000070000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10001080000000000000001 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -23,6 +24,7 @@
 		A10001050000000000000001 /* ArchiveService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveService.swift; sourceTree = "<group>"; };
 		A10001060000000000000001 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		A10001070000000000000001 /* MarkMacZip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MarkMacZip.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10001080000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -53,6 +55,7 @@
 				A10001040000000000000001 /* FilePicker.swift */,
 				A10001050000000000000001 /* ArchiveService.swift */,
 				A10001060000000000000001 /* Models.swift */,
+				A10001080000000000000001 /* Assets.xcassets */,
 			);
 			path = MarkMacZip;
 			sourceTree = "<group>";
@@ -123,6 +126,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10000070000000000000001 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -264,7 +268,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11.5;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.markmaczip.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -290,7 +294,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 11.5;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.markmaczip.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;

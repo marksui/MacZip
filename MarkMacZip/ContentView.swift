@@ -3,6 +3,23 @@ import UniformTypeIdentifiers
 import AppKit
 import Darwin
 
+private final class DropURLCollector {
+    private let lock = NSLock()
+    private var storage: [URL] = []
+
+    func append(_ url: URL) {
+        lock.lock()
+        storage.append(url)
+        lock.unlock()
+    }
+
+    var urls: [URL] {
+        lock.lock()
+        defer { lock.unlock() }
+        return storage
+    }
+}
+
 @MainActor
 final class ContentViewModel: ObservableObject {
     @Published var selectedItems: [URL] = []
@@ -244,8 +261,7 @@ final class ContentViewModel: ObservableObject {
         statusText = AppStrings.preparingDropStatus(for: language)
 
         let group = DispatchGroup()
-        let storageQueue = DispatchQueue(label: "MarkMacZip.DropStorage")
-        var loadedURLs: [URL] = []
+        let loadedURLs = DropURLCollector()
 
         for provider in fileProviders {
             group.enter()
@@ -263,14 +279,12 @@ final class ContentViewModel: ObservableObject {
                     return
                 }
 
-                storageQueue.sync {
-                    loadedURLs.append(url)
-                }
+                loadedURLs.append(url)
             }
         }
 
         group.notify(queue: .main) {
-            self.applySelectedItems(loadedURLs)
+            self.applySelectedItems(loadedURLs.urls)
         }
 
         return true
@@ -317,10 +331,21 @@ final class ContentViewModel: ObservableObject {
         if !hasManuallyChosenOutputFolder || outputFolder == nil {
             outputFolder = suggestedOutputFolder(from: cleanedItems.last)
         }
-        statusText = AppStrings.selectedStatus(for: language)
+        statusText = extractionToolMessage(for: cleanedItems) ?? AppStrings.selectedStatus(for: language)
         progressVisualState = .idle
         progressFraction = nil
         progressDetail = ""
+    }
+
+    private func extractionToolMessage(for urls: [URL]) -> String? {
+        let formats = urls.compactMap { ArchiveFormat.detect(from: $0) }
+        if formats.contains(.rar), !archiveService.supportsExtraction(format: .rar) {
+            return AppStrings.unsupportedRar(for: language)
+        }
+        if formats.contains(.sevenZ), !archiveService.supportsExtraction(format: .sevenZ) {
+            return AppStrings.unsupportedSevenZip(for: language)
+        }
+        return nil
     }
 
     private func suggestedOutputFolder(from url: URL?) -> URL? {
@@ -451,7 +476,7 @@ final class ContentViewModel: ObservableObject {
         return totalSize
     }
 
-    private nonisolated struct ResourceUsageSnapshot {
+    private struct ResourceUsageSnapshot {
         let timestamp: Date
         let totalCPUSeconds: Double
     }
@@ -643,8 +668,22 @@ struct ContentView: View {
                             .foregroundColor(Color.accentColor)
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(item.lastPathComponent)
-                                .font(.headline)
+                            HStack(spacing: 8) {
+                                Text(item.lastPathComponent)
+                                    .font(.headline)
+
+                                if let format = ArchiveFormat.detect(from: item) {
+                                    Text(format.title(for: selectedLanguage))
+                                        .font(.caption2.weight(.bold))
+                                        .foregroundColor(Color.accentColor)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(
+                                            Capsule()
+                                                .fill(Color.accentColor.opacity(0.12))
+                                        )
+                                }
+                            }
 
                             Text(item.path)
                                 .font(.caption)
@@ -682,27 +721,37 @@ struct ContentView: View {
     private var controls: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 12) {
-                Button(AppStrings.selectFileButton(for: selectedLanguage)) {
+                Button {
                     viewModel.chooseItems()
+                } label: {
+                    Label(AppStrings.selectFileButton(for: selectedLanguage), systemImage: "doc.badge.plus")
                 }
 
-                Button(AppStrings.addFileButton(for: selectedLanguage)) {
+                Button {
                     viewModel.addItems()
+                } label: {
+                    Label(AppStrings.addFileButton(for: selectedLanguage), systemImage: "plus.circle")
                 }
 
-                Button(AppStrings.chooseOutputButton(for: selectedLanguage)) {
+                Button {
                     viewModel.chooseOutputFolder()
+                } label: {
+                    Label(AppStrings.chooseOutputButton(for: selectedLanguage), systemImage: "folder.badge.plus")
                 }
 
-                Button(AppStrings.extractButton(for: selectedLanguage)) {
+                Button {
                     viewModel.extractSelected()
+                } label: {
+                    Label(AppStrings.extractButton(for: selectedLanguage), systemImage: "tray.and.arrow.down.fill")
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(PrimaryActionButtonStyle(tint: Color.accentColor))
                 .disabled(!viewModel.canExtract)
 
-                Button(AppStrings.compressButton(for: selectedLanguage)) {
+                Button {
                     viewModel.compressSelected()
+                } label: {
+                    Label(AppStrings.compressButton(for: selectedLanguage), systemImage: "archivebox.fill")
                 }
                 .buttonStyle(PrimaryActionButtonStyle(tint: Color.green))
                 .disabled(!viewModel.canCompress)
@@ -758,38 +807,114 @@ struct ContentView: View {
 
     private var progressCard: some View {
         GroupBox {
-            VStack(alignment: .leading, spacing: 8) {
-                if viewModel.isWorking {
-                    if let fraction = viewModel.progressFraction {
-                        ProgressView(value: fraction)
-                            .controlSize(.small)
-                    } else {
-                        ProgressView()
-                            .controlSize(.small)
-                    }
-                } else if viewModel.progressVisualState != .idle {
-                    ProgressView(value: 1)
-                        .controlSize(.small)
-                }
-
-                let stateText = viewModel.progressStateText(for: selectedLanguage)
-                if !stateText.isEmpty {
-                    Text(stateText)
-                        .font(.caption.weight(.semibold))
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 10) {
+                    Image(systemName: progressStateIconName)
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(progressStateColor)
+                        .frame(width: 30, height: 30)
+                        .background(
+                            Circle()
+                                .fill(progressStateColor.opacity(0.12))
+                        )
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(progressHeadline)
+                            .font(.headline)
+
+                        Text(progressDetailText)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .lineLimit(2)
+                    }
+
+                    Spacer(minLength: 8)
+
+                    Text(progressPercentageText)
+                        .font(.caption.monospacedDigit().weight(.semibold))
+                        .foregroundColor(progressStateColor)
+                        .frame(minWidth: 44, alignment: .trailing)
                 }
 
-                if !viewModel.progressDetail.isEmpty {
-                    Text(viewModel.progressDetail)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                }
+                progressBar
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         } label: {
             Text(AppStrings.progressTitle(for: selectedLanguage))
                 .font(.headline)
+        }
+    }
+
+    private var progressBar: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(Color.secondary.opacity(0.14))
+
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(progressStateColor)
+                    .frame(width: max(geometry.size.width * progressDisplayFraction, viewModel.progressVisualState == .idle ? 0 : 10))
+            }
+        }
+        .frame(height: 10)
+        .animation(.easeInOut(duration: 0.22), value: progressDisplayFraction)
+    }
+
+    private var progressDisplayFraction: Double {
+        if let fraction = viewModel.progressFraction {
+            return min(max(fraction, 0), 1)
+        }
+
+        if viewModel.isWorking {
+            return 0.16
+        }
+
+        return viewModel.progressVisualState == .success ? 1 : 0
+    }
+
+    private var progressHeadline: String {
+        switch viewModel.progressVisualState {
+        case .idle:
+            return AppStrings.progressReady(for: selectedLanguage)
+        case .running:
+            return AppStrings.progressWorking(for: selectedLanguage)
+        case .success:
+            return AppStrings.progressCompleted(for: selectedLanguage)
+        case .failure:
+            return AppStrings.progressFailed(for: selectedLanguage)
+        }
+    }
+
+    private var progressDetailText: String {
+        if !viewModel.progressDetail.isEmpty {
+            return viewModel.progressDetail
+        }
+
+        if viewModel.isWorking {
+            return AppStrings.progressIndeterminate(for: selectedLanguage)
+        }
+
+        return viewModel.statusText
+    }
+
+    private var progressPercentageText: String {
+        guard let fraction = viewModel.progressFraction else {
+            return viewModel.isWorking ? "--%" : "0%"
+        }
+
+        return "\(Int((min(max(fraction, 0), 1) * 100).rounded()))%"
+    }
+
+    private var progressStateIconName: String {
+        switch viewModel.progressVisualState {
+        case .idle:
+            return "clock"
+        case .running:
+            return "arrow.triangle.2.circlepath"
+        case .success:
+            return "checkmark.circle.fill"
+        case .failure:
+            return "exclamationmark.triangle.fill"
         }
     }
 
@@ -799,6 +924,8 @@ struct ContentView: View {
             return .green
         case .failure:
             return .red
+        case .running:
+            return Color.accentColor
         default:
             return .secondary
         }

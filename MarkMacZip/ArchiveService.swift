@@ -9,6 +9,8 @@ enum ArchiveServiceError: LocalizedError {
     case unsupportedSelection
     case unsupportedGzipInput
     case sevenZipToolMissing
+    case rarToolMissing
+    case unsupportedCompressionFormat
 
     private var currentLanguage: AppLanguage {
         let rawValue = UserDefaults.standard.string(forKey: "appLanguage") ?? ""
@@ -33,18 +35,35 @@ enum ArchiveServiceError: LocalizedError {
             return AppStrings.unsupportedGzipInput(for: currentLanguage)
         case .sevenZipToolMissing:
             return AppStrings.unsupportedSevenZip(for: currentLanguage)
+        case .rarToolMissing:
+            return AppStrings.unsupportedRar(for: currentLanguage)
+        case .unsupportedCompressionFormat:
+            return AppStrings.unsupportedCompressionFormat(for: currentLanguage)
         }
     }
 }
 
 struct ArchiveService {
+    private enum RarExtractionBackend {
+        case unar(String)
+        case unrar(String)
+        case sevenZip(String)
+    }
+
     private var fileManager: FileManager { .default }
 
     static func isSevenZipAvailable() -> Bool {
         sevenZipExecutablePath() != nil
     }
 
+    static func isRarExtractionAvailable() -> Bool {
+        rarExtractionBackend() != nil
+    }
+
     func supportsCompression(format: ArchiveFormat) -> Bool {
+        if format == .rar {
+            return false
+        }
         if format == .sevenZ {
             return Self.isSevenZipAvailable()
         }
@@ -54,6 +73,9 @@ struct ArchiveService {
     func supportsExtraction(format: ArchiveFormat) -> Bool {
         if format == .sevenZ {
             return Self.isSevenZipAvailable()
+        }
+        if format == .rar {
+            return Self.isRarExtractionAvailable()
         }
         return true
     }
@@ -164,12 +186,14 @@ struct ArchiveService {
             }
 
             guard supportsExtraction(format: format) else {
-                throw ArchiveServiceError.sevenZipToolMissing
+                throw format == .rar ? ArchiveServiceError.rarToolMissing : ArchiveServiceError.sevenZipToolMissing
             }
 
             switch format {
             case .zip:
                 return try extractZip(archiveURL, to: outputFolder, password: password, progressHandler: progressHandler)
+            case .rar:
+                return try extractRar(archiveURL, to: outputFolder, password: password, progressHandler: progressHandler)
             case .sevenZ:
                 return try extractSevenZ(archiveURL, to: outputFolder, password: password, progressHandler: progressHandler)
             case .tar:
@@ -199,7 +223,7 @@ struct ArchiveService {
         progressHandler: ((ArchiveOperationProgress) -> Void)?
     ) throws -> ArchiveOperationResult {
         guard supportsCompression(format: format) else {
-            throw ArchiveServiceError.sevenZipToolMissing
+            throw format == .sevenZ ? ArchiveServiceError.sevenZipToolMissing : ArchiveServiceError.unsupportedCompressionFormat
         }
 
         let parentFolder = commonParentFolder(for: itemURLs)
@@ -292,6 +316,9 @@ struct ArchiveService {
                 outputFile: destinationURL,
                 progressHandler: progressHandler
             )
+
+        case .rar:
+            throw ArchiveServiceError.unsupportedCompressionFormat
 
         case .sevenZ:
             guard let executablePath = Self.sevenZipExecutablePath() else {
@@ -500,6 +527,93 @@ struct ArchiveService {
             },
             progressHandler: progressHandler
         )
+
+        return ArchiveOperationResult(
+            sourceURL: archiveURL,
+            destinationURL: destinationFolder,
+            action: .extract,
+            isSuccess: true,
+            message: "Saved to \(destinationFolder.path)"
+        )
+    }
+
+    private func extractRar(
+        _ archiveURL: URL,
+        to outputFolder: URL,
+        password: String?,
+        progressHandler: ((ArchiveOperationProgress) -> Void)?
+    ) throws -> ArchiveOperationResult {
+        guard let backend = Self.rarExtractionBackend() else {
+            throw ArchiveServiceError.rarToolMissing
+        }
+
+        let destinationFolder = uniqueDestination(
+            in: outputFolder,
+            baseName: extractionBaseName(for: archiveURL, format: .rar),
+            pathExtension: nil
+        )
+
+        try fileManager.createDirectory(at: destinationFolder, withIntermediateDirectories: true)
+
+        switch backend {
+        case let .unar(executablePath):
+            var arguments = [
+                "-force-overwrite",
+                "-output-directory", destinationFolder.path
+            ]
+            if let password, !password.isEmpty {
+                arguments += ["-password", password]
+            }
+            arguments.append(archiveURL.path)
+
+            try runProcessStreaming(
+                executablePath: executablePath,
+                arguments: arguments,
+                currentDirectory: nil,
+                estimatedTotalUnits: nil,
+                shouldCountLine: { _ in false },
+                progressFromLine: Self.parseCommandPercentage(from:),
+                progressHandler: progressHandler
+            )
+
+        case let .unrar(executablePath):
+            let passwordArgument = password.flatMap { $0.isEmpty ? nil : "-p\($0)" } ?? "-p-"
+            let totalEntries = max(
+                (try? countOutputLines(
+                    executablePath: executablePath,
+                    arguments: ["lb", passwordArgument, archiveURL.path]
+                )) ?? 0,
+                1
+            )
+
+            try runProcessStreaming(
+                executablePath: executablePath,
+                arguments: ["x", "-o+", passwordArgument, archiveURL.path, destinationFolder.path + "/"],
+                currentDirectory: nil,
+                estimatedTotalUnits: totalEntries,
+                shouldCountLine: { line in
+                    line.contains("Extracting") || line.contains("Creating") || line.hasSuffix("OK")
+                },
+                progressFromLine: Self.parseCommandPercentage(from:),
+                progressHandler: progressHandler
+            )
+
+        case let .sevenZip(executablePath):
+            var arguments = ["x", archiveURL.path, "-o\(destinationFolder.path)", "-y"]
+            if let password, !password.isEmpty {
+                arguments.append("-p\(password)")
+            }
+
+            try runProcessStreaming(
+                executablePath: executablePath,
+                arguments: arguments,
+                currentDirectory: nil,
+                estimatedTotalUnits: nil,
+                shouldCountLine: { _ in false },
+                progressFromLine: Self.parseCommandPercentage(from:),
+                progressHandler: progressHandler
+            )
+        }
 
         return ArchiveOperationResult(
             sourceURL: archiveURL,
@@ -783,7 +897,7 @@ struct ArchiveService {
 
         guard process.terminationStatus == 0 else {
             let trimmedOutput = combinedOutput.trimmingCharacters(in: .whitespacesAndNewlines)
-            if executablePath.contains("tar") || executablePath.contains("unzip") || executablePath.contains("gunzip") {
+            if Self.isExtractionCommand(executablePath: executablePath, arguments: arguments) {
                 throw ArchiveServiceError.extractionFailed(trimmedOutput.isEmpty ? "Please check the archive and try again." : trimmedOutput)
             }
             throw ArchiveServiceError.compressionFailed(trimmedOutput.isEmpty ? "Please check the selected files and try again." : trimmedOutput)
@@ -838,6 +952,9 @@ struct ArchiveService {
 
         guard process.terminationStatus == 0 else {
             try? fileManager.removeItem(at: outputFile)
+            if Self.isExtractionCommand(executablePath: executablePath, arguments: arguments) {
+                throw ArchiveServiceError.extractionFailed(errorText.isEmpty ? "Please check the archive and try again." : errorText)
+            }
             throw ArchiveServiceError.compressionFailed(errorText.isEmpty ? "Please check the selected files and try again." : errorText)
         }
 
@@ -873,7 +990,52 @@ struct ArchiveService {
         return nil
     }
 
+    private static func rarExtractionBackend() -> RarExtractionBackend? {
+        let unarCandidates = [
+            "/opt/homebrew/bin/unar",
+            "/usr/local/bin/unar",
+            "/usr/bin/unar"
+        ]
+
+        for path in unarCandidates where FileManager.default.isExecutableFile(atPath: path) {
+            return .unar(path)
+        }
+
+        let unrarCandidates = [
+            "/opt/homebrew/bin/unrar",
+            "/usr/local/bin/unrar",
+            "/usr/bin/unrar"
+        ]
+
+        for path in unrarCandidates where FileManager.default.isExecutableFile(atPath: path) {
+            return .unrar(path)
+        }
+
+        if let sevenZipPath = sevenZipExecutablePath() {
+            return .sevenZip(sevenZipPath)
+        }
+
+        return nil
+    }
+
+    private static func isExtractionCommand(executablePath: String, arguments: [String]) -> Bool {
+        let executableName = URL(fileURLWithPath: executablePath).lastPathComponent.lowercased()
+        if ["tar", "unzip", "gunzip", "unar", "unrar"].contains(executableName) {
+            return true
+        }
+
+        if ["7z", "7zz"].contains(executableName), arguments.first == "x" {
+            return true
+        }
+
+        return false
+    }
+
     private static func parseSevenZipPercentage(from line: String) -> Double? {
+        parseCommandPercentage(from: line)
+    }
+
+    private static func parseCommandPercentage(from line: String) -> Double? {
         guard let regex = try? NSRegularExpression(pattern: "([0-9]{1,3})%") else {
             return nil
         }
